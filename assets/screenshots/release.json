@@ -1,0 +1,18 @@
+{
+  "nodes": {
+    "plan": "done",
+    "build": "done",
+    "test": "done",
+    "green": "done",
+    "fix": "skipped",
+    "notes": "done",
+    "publish": "active"
+  },
+  "taken": [
+    ["plan", "build"],
+    ["build", "test"],
+    ["test", "green"],
+    ["green", "notes"],
+    ["notes", "publish"]
+  ]
+}

@@ -1,0 +1,28 @@
+[package]
+name = "flow-manager"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "Draw a Mermaid flowchart with node statuses, as SVG or plain text"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/lucas-stanford/fm"
+homepage = "https://github.com/lucas-stanford/fm"
+keywords = ["mermaid", "flowchart", "svg", "diagram", "cli"]
+categories = ["command-line-utilities", "visualization"]
+include = ["/src/**", "/docs/**", "/README.md", "/LICENSE", "/CHANGELOG.md"]
+
+[[bin]]
+name = "fm"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# Exact: merman is pre-1.0 and the decoration depends on its SVG structure
+# (see tests/merman_seam.rs).
+merman = { version = "=0.8.0-alpha.6", features = ["svg", "ascii"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+tempfile = "3.14"

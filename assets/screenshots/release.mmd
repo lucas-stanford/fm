@@ -1,0 +1,9 @@
+flowchart TD
+  plan[Plan the release] --> build[Build binaries]
+  build --> test[Run the tests]
+  test --> green{All green?}
+  green -->|no| fix[Fix failures]
+  fix --> test
+  green -->|yes| notes[Write release notes]
+  notes --> publish[Publish the release]
+  publish --> announce[Announce it]

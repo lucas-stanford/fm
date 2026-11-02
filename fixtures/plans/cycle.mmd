@@ -1,0 +1,4 @@
+flowchart LR
+  build[Build] --> test{Tests pass?}
+  test -->|no| fix[Fix and retry] --> build
+  test -->|yes| done[Done]

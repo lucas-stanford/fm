@@ -1,0 +1,5 @@
+flowchart LR
+  start[Start] --> check{Looks right?}
+  check -->|yes| ship[Ship it]
+  check -->|no| fix[Fix it]
+  check -- unsure --> ask[Ask a human]

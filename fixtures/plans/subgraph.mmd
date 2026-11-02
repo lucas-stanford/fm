@@ -1,0 +1,10 @@
+flowchart TD
+  subgraph prep[Prepare]
+    direction LR
+    clone[Clone] --> deps[Install deps]
+  end
+  subgraph verify[Verify]
+    lint[Lint] --> test[Test]
+  end
+  deps --> lint
+  test --> ship[Ship]

@@ -1,0 +1,7 @@
+flowchart TD
+  plan[Plan] --> lint[Lint]
+  plan --> test[Test]
+  plan --> docs[Docs]
+  lint --> gather[Gather results]
+  test --> gather
+  docs --> gather

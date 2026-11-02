@@ -1,0 +1,2 @@
+# Shell scripts must keep LF endings, or they fail on Unix with `$'\r': command not found`.
+*.sh text eol=lf
