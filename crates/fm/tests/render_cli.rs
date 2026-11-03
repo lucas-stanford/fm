@@ -8,7 +8,7 @@ use assert_cmd::cargo::cargo_bin;
 
 fn branch() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("fixtures/plans/branch.mmd")
+        .join("../../fixtures/plans/branch.mmd")
         .display()
         .to_string()
 }

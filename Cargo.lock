@@ -370,6 +370,14 @@ name = "flow-manager"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "fm-render",
+ "tempfile",
+]
+
+[[package]]
+name = "fm-render"
+version = "0.1.0"
+dependencies = [
  "merman",
  "serde",
  "serde_json",

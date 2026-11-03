@@ -69,9 +69,9 @@ enum Invocation {
     Render(Options),
 }
 
-pub fn main() -> ExitCode {
-    let argv: Vec<String> = std::env::args().skip(1).collect();
-    match run(&argv) {
+/// `fm <argv…>` where `argv[0]` is `render`, `--help` or `--version`: parse, draw and print.
+pub fn render_command(argv: &[String]) -> ExitCode {
+    match run(argv) {
         Ok(()) => ExitCode::SUCCESS,
         Err(failure) => {
             eprintln!("fm: {failure}");

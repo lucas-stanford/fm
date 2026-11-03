@@ -148,7 +148,7 @@ fn subgraphs_render_as_identified_clusters() {
 #[test]
 fn the_ascii_renderer_still_cannot_route_the_exits_fixture() {
     let plan = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/plans/exits.mmd"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/plans/exits.mmd"),
     )
     .expect("exits fixture");
     let outcome = Renderer::new().render(RenderRequest::ascii(

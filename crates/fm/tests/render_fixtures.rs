@@ -9,7 +9,7 @@ use std::process::{Command, Output};
 use assert_cmd::cargo::cargo_bin;
 
 fn fixtures() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/plans")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/plans")
 }
 
 fn valid_plans() -> Vec<PathBuf> {

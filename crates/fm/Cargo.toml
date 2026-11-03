@@ -1,0 +1,23 @@
+[package]
+name = "flow-manager"
+description = "Draw a Mermaid flowchart with node statuses, as SVG or plain text"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["mermaid", "flowchart", "svg", "diagram", "cli"]
+categories = ["command-line-utilities", "visualization"]
+
+[[bin]]
+name = "fm"
+path = "src/main.rs"
+
+[dependencies]
+fm-render.workspace = true
+
+[dev-dependencies]
+assert_cmd = "2.0"
+tempfile.workspace = true
