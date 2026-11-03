@@ -297,7 +297,11 @@ fn ok_runs_pre_hook_body_and_post_hook_and_writes_one_record() {
     assert_eq!(session.file, h.paths.session_file(&rec.id));
     let transcript = std::fs::read_to_string(&session.file).unwrap();
     assert_eq!(transcript.lines().count(), 6);
-    assert!(transcript.starts_with("{\"id\":\"sess-1\""), "{transcript}");
+    // Each line as the CLI wrote it, keys in their own order.
+    assert!(
+        transcript.starts_with("{\"type\":\"session\",\"id\":\"sess-1\"}"),
+        "{transcript}"
+    );
 
     // The body got its prompt on stdin: the body, the notes guide, then the input as data.
     let (args, stdin) = h.agent_saw(&record).expect("the agent ran");
@@ -886,10 +890,10 @@ fn progress_verbs_move_the_chart_during_a_run_and_fold_into_the_record_in_flow_o
 
     // What the agent was handed: the run, its node and the state folder, and fm first on PATH.
     let seen: Value = serde_json::from_str(std::fs::read_to_string(&log).unwrap().trim()).unwrap();
-    assert_eq!(seen["FM_RUN"], rec.id.as_str());
-    assert_eq!(seen["FM_NODE"], "body");
+    assert_eq!(seen["AUTOMATION_RUN"], rec.id.as_str());
+    assert_eq!(seen["AUTOMATION_NODE"], "body");
     assert_eq!(
-        seen["FM_STATE_DIR"],
+        seen["AUTOMATION_STATE_DIR"],
         h.paths.root.to_string_lossy().as_ref()
     );
     assert_eq!(
@@ -945,11 +949,11 @@ fn hooks_get_the_run_identity_and_no_node_without_a_chart() {
     let pre = script(
         "env",
         &format!(
-            "@echo %FM_RUN%;%FM_NODE%;%FM_STATE_DIR%;%AUTOMATION_PHASE%> {}\n",
+            "@echo %AUTOMATION_RUN%;%AUTOMATION_NODE%;%AUTOMATION_STATE_DIR%;%AUTOMATION_PHASE%> {}\n",
             q(&env)
         ),
         &format!(
-            "printf '%s;%s;%s;%s' \"$FM_RUN\" \"$FM_NODE\" \"$FM_STATE_DIR\" \"$AUTOMATION_PHASE\" > {}\n",
+            "printf '%s;%s;%s;%s' \"$AUTOMATION_RUN\" \"$AUTOMATION_NODE\" \"$AUTOMATION_STATE_DIR\" \"$AUTOMATION_PHASE\" > {}\n",
             q(&env)
         ),
     );
