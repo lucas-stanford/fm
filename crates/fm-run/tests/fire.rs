@@ -564,7 +564,9 @@ fn a_timeout_ends_a_pre_script_too() {
     let h = host();
     let pre = script("pre", "@ping -n 30 127.0.0.1 >NUL\n", "sleep 30\n");
     let post = post_capture(&h);
-    let front = format!("timeout: 1s\n{}", hooks_front(&[&pre.0], &[&post.0]));
+    // 3s, not 1s: under a loaded test run, setup alone can take a second, and then the run times
+    // out before the pre script starts and there is no running script to end.
+    let front = format!("timeout: 3s\n{}", hooks_front(&[&pre.0], &[&post.0]));
     let l = h.automation("slowpre", &front, "Body.", &[pre.clone(), post.clone()]);
     h.arm(&l);
     let record = h.out("agent.txt");
@@ -573,10 +575,11 @@ fn a_timeout_ends_a_pre_script_too() {
     assert!(started.elapsed() < Duration::from_secs(15));
     assert_eq!(rec.outcome, Outcome::Failed);
     assert_eq!(rec.error.as_ref().unwrap().kind, ErrorKind::Timeout);
+    assert_eq!(rec.hooks[0].phase, Phase::Pre, "{:#?}", rec.hooks);
     assert_eq!(rec.hooks[0].status, HookStatus::Failed);
     assert_eq!(
         rec.hooks[0].reason.as_deref(),
-        Some("run timed out after 1s")
+        Some("run timed out after 3s")
     );
     assert!(!record.exists());
     assert_eq!(post_env(&h), "failed;timeout");
