@@ -67,7 +67,7 @@ pub struct AutomationVars {
     pub root: PathBuf,
     pub repo_root: Option<PathBuf>,
     pub context: ScriptContext,
-    /// Added last, e.g. the run's progress identity (`FM_RUN`, `FM_NODE`, `FM_STATE_DIR`).
+    /// Added last, e.g. the run's progress identity (`AUTOMATION_RUN`, `AUTOMATION_NODE`, `AUTOMATION_STATE_DIR`).
     pub extra: Vec<(String, String)>,
 }
 
@@ -373,7 +373,7 @@ mod tests {
             *late = true;
             *trigger = Trigger::Schedule;
         }
-        v.extra = vec![s("FM_RUN", "run-1")];
+        v.extra = vec![s("AUTOMATION_RUN", "run-1")];
         let env = automation_env(&v);
         assert_eq!(get(&env, "AUTOMATION_SCOPE"), Some("repository"));
         assert_eq!(get(&env, "AUTOMATION_REPO_ROOT"), Some("repo"));
@@ -385,7 +385,7 @@ mod tests {
         assert_eq!(get(&env, "AUTOMATION_TRIGGER"), Some("schedule"));
         assert_eq!(get(&env, "AUTOMATION_OUTCOME"), Some("failed"));
         assert_eq!(get(&env, "AUTOMATION_REASON"), Some("pre[0] s.js exited 3"));
-        assert_eq!(env.last(), Some(&s("FM_RUN", "run-1")));
+        assert_eq!(env.last(), Some(&s("AUTOMATION_RUN", "run-1")));
     }
 
     #[test]
@@ -476,9 +476,12 @@ mod tests {
     fn inherit_keeps_the_login_environment_for_agent_turns() {
         let mut cmd = Command::new("x");
         let mode = EnvMode::Inherit {
-            overlay: vec![s("FM_RUN", "r")],
+            overlay: vec![s("AUTOMATION_RUN", "r")],
         };
         apply_from(&mut cmd, &mode, parent());
-        assert_eq!(told(&cmd), vec![("FM_RUN".into(), Some("r".into()))]);
+        assert_eq!(
+            told(&cmd),
+            vec![("AUTOMATION_RUN".into(), Some("r".into()))]
+        );
     }
 }

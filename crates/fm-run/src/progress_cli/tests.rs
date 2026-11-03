@@ -60,8 +60,8 @@ fn opened() -> Opened {
 impl Opened {
     fn env(&self) -> FakeEnv {
         FakeEnv::default()
-            .set("FM_RUN", &self.run)
-            .set("FM_STATE_DIR", self.paths.root.to_string_lossy())
+            .set("AUTOMATION_RUN", &self.run)
+            .set("AUTOMATION_STATE_DIR", self.paths.root.to_string_lossy())
     }
 }
 
@@ -195,7 +195,7 @@ fn next_comes_from_fm_node_else_the_one_running_node() {
         cli(&["next", "reproduce"], &env).stdout,
         "reproduce active, read done\n"
     );
-    let with_node = o.env().set("FM_NODE", "reproduce");
+    let with_node = o.env().set("AUTOMATION_NODE", "reproduce");
     assert_eq!(
         cli(&["next", "draft"], &with_node).stdout,
         "draft active, reproduce done\n"
@@ -346,12 +346,12 @@ fn usage_is_exit_1_and_refusals_exit_2() {
 #[test]
 fn finds_the_run_from_the_environment_or_says_why_not() {
     let o = opened();
-    let no_run = FakeEnv::default().set("FM_STATE_DIR", o.paths.root.to_string_lossy());
+    let no_run = FakeEnv::default().set("AUTOMATION_STATE_DIR", o.paths.root.to_string_lossy());
     let r = cli(&["status"], &no_run);
     assert_eq!(r.code, 2);
     assert!(
         r.stderr
-            .starts_with("fm: not inside a run — FM_RUN is not set"),
+            .starts_with("fm: not inside a run — AUTOMATION_RUN is not set"),
         "{r:?}"
     );
     assert_eq!(
@@ -360,21 +360,21 @@ fn finds_the_run_from_the_environment_or_says_why_not() {
     );
     assert_eq!(cli(&["status", "--run", &o.run], &no_run).code, 0);
 
-    // No FM_STATE_DIR: the state folder, from FM_HOME.
+    // No AUTOMATION_STATE_DIR: the state folder, from FM_HOME.
     let home = FakeEnv::default()
-        .set("FM_RUN", &o.run)
+        .set("AUTOMATION_RUN", &o.run)
         .set("FM_HOME", o.paths.root.to_string_lossy());
     assert_eq!(cli(&["status"], &home).code, 0);
 
     let elsewhere = tempfile::tempdir().unwrap();
     let wrong = FakeEnv::default()
-        .set("FM_RUN", &o.run)
-        .set("FM_STATE_DIR", elsewhere.path().to_string_lossy());
+        .set("AUTOMATION_RUN", &o.run)
+        .set("AUTOMATION_STATE_DIR", elsewhere.path().to_string_lossy());
     let v = json(&cli(&["status", "--json"], &wrong));
     assert_eq!(v["error"]["code"], "UNKNOWN_RUN");
     let escape = FakeEnv::default()
-        .set("FM_RUN", "../secrets")
-        .set("FM_STATE_DIR", elsewhere.path().to_string_lossy());
+        .set("AUTOMATION_RUN", "../secrets")
+        .set("AUTOMATION_STATE_DIR", elsewhere.path().to_string_lossy());
     assert_eq!(
         json(&cli(&["status", "--json"], &escape))["error"]["code"],
         "UNKNOWN_RUN"

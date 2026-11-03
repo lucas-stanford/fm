@@ -53,7 +53,7 @@ impl Smoke {
             .env("HOME", &self.fx.home)
             .env("USERPROFILE", &self.fx.home)
             .env("PI_AGENT_DIR", &self.fx.pa)
-            .env_remove("FM_RUN")
+            .env_remove("AUTOMATION_RUN")
             .env_remove("FM_BIN");
         for (_, var, dir) in SIGN_IN {
             let real = self.real_home.join(dir);

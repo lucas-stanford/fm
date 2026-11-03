@@ -3,7 +3,7 @@
 //! - `fm-run-fake-agent <verb> …` with a progress verb (`step`, `next`, …) is `fm <verb> …`.
 //! - Anything else is `fm_agents::fake` (see its options), after these:
 //!   - `--fm-run-progress=<verb>|<arg>|…`: run one progress verb first, as an agent would, with
-//!     the run's `FM_RUN`, `FM_NODE` and `FM_STATE_DIR`. Repeatable.
+//!     the run's `AUTOMATION_RUN`, `AUTOMATION_NODE` and `AUTOMATION_STATE_DIR`. Repeatable.
 //!   - `--fm-run-log=<path>`: append one JSON line: those variables, the first `PATH` entry, and
 //!     each progress verb's exit code.
 //!   - `--fm-run-pid=<path>`: write this process's id, so a test can see it die.
@@ -40,9 +40,9 @@ fn main() {
             .next()
             .map(|p| p.to_string_lossy().into_owned());
         let line = serde_json::json!({
-            "FM_RUN": env.var("FM_RUN"),
-            "FM_NODE": env.var("FM_NODE"),
-            "FM_STATE_DIR": env.var("FM_STATE_DIR"),
+            "AUTOMATION_RUN": env.var("AUTOMATION_RUN"),
+            "AUTOMATION_NODE": env.var("AUTOMATION_NODE"),
+            "AUTOMATION_STATE_DIR": env.var("AUTOMATION_STATE_DIR"),
             "PATH0": first,
             "codes": codes,
         });

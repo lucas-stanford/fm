@@ -16,7 +16,7 @@ pub fn notes_guide() -> String {
     [
         "<notes>",
         RECEIPTS_LINE,
-        "If you publish anything or leave something for the reader, record it with `fm note \"what it is\" --link \"label=https://…\"` (FM_RUN is already set).",
+        "If you publish anything or leave something for the reader, record it with `fm note \"what it is\" --link \"label=https://…\"` (AUTOMATION_RUN is already set).",
         message_line(),
         "If `fm` fails, carry on.",
         "</notes>",
@@ -33,7 +33,7 @@ pub fn progress_guide(chart: &str, strict: bool) -> String {
     let nodes = format!("Nodes: {} (or their exact labels).", ids.join(", "));
     let mut lines: Vec<&str> = vec![
         "<progress>",
-        "This run is tracked on its flowchart. Report where you are with `fm` (FM_RUN is already set):",
+        "This run is tracked on its flowchart. Report where you are with `fm` (AUTOMATION_RUN is already set):",
         "- `fm step <node> [-m \"text\"] [--status active|waiting|done|failed|skipped]` — set one node (default active)",
         "- `fm next <to> --from <node> [-m \"text\"]` — finish <node> and start <to>",
         "- `fm say \"text\" [--node <node>]` — add an update to a node",
@@ -47,7 +47,7 @@ pub fn progress_guide(chart: &str, strict: bool) -> String {
         );
     }
     lines.extend([
-        "Subagents inherit FM_RUN; set FM_NODE=<its node> for each so its `fm say`/`fm next` land there.",
+        "Subagents inherit AUTOMATION_RUN; set AUTOMATION_NODE=<its node> for each so its `fm say`/`fm next` land there.",
         RECEIPTS_LINE,
         message_line(),
         "If `fm` fails, carry on.",

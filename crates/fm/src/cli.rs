@@ -28,11 +28,11 @@ pub const EXIT_REFUSED: i32 = 2;
 pub const IN_RUN_VERBS: [&str; 6] = ["step", "next", "say", "note", "message", "status"];
 
 const IN_RUN_HELP: &str = "\
-Inside a run (FM_RUN is set for the body, every hook and what they start):
+Inside a run (AUTOMATION_RUN is set for the body, every hook and what they start):
   fm step <node> [--status active|waiting|done|failed|skipped] [-m text]
                         set one node; active by default
   fm next <to> [--from <node>] [-m text]
-                        finish <node> and start <to>; <node> defaults to FM_NODE, else the one running node
+                        finish <node> and start <to>; <node> defaults to AUTOMATION_NODE, else the one running node
   fm say <text> [--node <node>] [--request-id <key>]
                         add an update to a node; a request id makes a retry a no-op
   fm note <text> [--link \"label=https://…\"]… [--request-id <key>]

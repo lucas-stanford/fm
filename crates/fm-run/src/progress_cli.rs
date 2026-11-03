@@ -1,5 +1,5 @@
 //! `fm step|next|say|note|message|status`: the verbs a run's agent, hooks and whatever they start
-//! use to report progress. Found through `FM_RUN`, `FM_NODE` and `FM_STATE_DIR`. A port of
+//! use to report progress. Found through `AUTOMATION_RUN`, `AUTOMATION_NODE` and `AUTOMATION_STATE_DIR`. A port of
 //! pi-automations' `progress-cli.ts`: the same flags, output and exit codes (0 ok, 1 usage,
 //! 2 refused). The `fm` binary forwards its arguments here.
 
@@ -557,12 +557,12 @@ pub fn progress_cli(args: &[String], env: &dyn Env, now: DateTime<Utc>) -> CliOu
 pub fn in_run_help_lines() -> Vec<String> {
     let pad = " ".repeat(22);
     vec![
-        "Inside a run (FM_RUN is set for the body, every hook and what they start):".into(),
+        "Inside a run (AUTOMATION_RUN is set for the body, every hook and what they start):".into(),
         "fm step <node> [--status active|waiting|done|failed|skipped] [-m text]".into(),
         format!("{pad}set one node; active by default"),
         "fm next <to> [--from <node>] [-m text]".into(),
         format!(
-            "{pad}finish <node> and start <to>; <node> defaults to FM_NODE, else the one running node"
+            "{pad}finish <node> and start <to>; <node> defaults to AUTOMATION_NODE, else the one running node"
         ),
         "fm say <text> [--node <node>] [--request-id <key>]".into(),
         format!("{pad}add an update to a node; a request id makes a retry a no-op"),

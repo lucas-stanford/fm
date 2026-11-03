@@ -127,7 +127,7 @@ impl Fx {
             .env("PI_AGENT_DIR", &self.pa)
             .env("PATH", &self.bin)
             .env_remove("FM_BIN")
-            .env_remove("FM_RUN");
+            .env_remove("AUTOMATION_RUN");
         c
     }
 }

@@ -14,9 +14,9 @@ use fm_state::{
 use crate::guide::{notes_guide, progress_guide};
 
 /// The variables that let anything a run starts report to it.
-pub const ENV_RUN: &str = "FM_RUN";
-pub const ENV_NODE: &str = "FM_NODE";
-pub const ENV_STATE_DIR: &str = "FM_STATE_DIR";
+pub const ENV_RUN: &str = "AUTOMATION_RUN";
+pub const ENV_NODE: &str = "AUTOMATION_NODE";
+pub const ENV_STATE_DIR: &str = "AUTOMATION_STATE_DIR";
 
 /// A chart's nodes in flow order, with their successors, as the progress store wants them.
 pub fn chart_nodes(chart: &str) -> Vec<ChartNode> {
@@ -214,7 +214,7 @@ impl Tracker {
             .flatten()
     }
 
-    /// `FM_RUN`, `FM_STATE_DIR`, and `FM_NODE` only when the chart has `node`, so a defaulted
+    /// `AUTOMATION_RUN`, `AUTOMATION_STATE_DIR`, and `AUTOMATION_NODE` only when the chart has `node`, so a defaulted
     /// `fm next` finds the running node instead.
     pub(crate) fn env(&self, node: &str) -> Vec<(String, String)> {
         if !self.started {

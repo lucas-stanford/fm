@@ -276,7 +276,7 @@ fn require_run_id(run_id: Option<&str>) -> PResult<&str> {
     let Some(id) = run_id.filter(|s| !s.is_empty()) else {
         return Err(perr(
             ProgressCode::NoRun,
-            "not inside a run — FM_RUN is not set (or pass --run <id>)",
+            "not inside a run — AUTOMATION_RUN is not set (or pass --run <id>)",
         ));
     };
     if !valid_run_id(id) {
@@ -518,7 +518,7 @@ fn closed_or_unknown(paths: &StatePaths, run_id: &str) -> ProgressError {
     } else {
         perr(
             ProgressCode::UnknownRun,
-            format!("no run {run_id} here — check FM_RUN and FM_STATE_DIR"),
+            format!("no run {run_id} here — check AUTOMATION_RUN and AUTOMATION_STATE_DIR"),
         )
     }
 }
@@ -634,7 +634,7 @@ pub fn resolve_node(snap: &ProgressSnapshot, reference: &str) -> PResult<Progres
     })
 }
 
-/// The node a write is about when none was named: `FM_NODE`, else the one running node.
+/// The node a write is about when none was named: `AUTOMATION_NODE`, else the one running node.
 fn default_node(
     snap: &ProgressSnapshot,
     env_node: Option<&str>,
@@ -812,7 +812,7 @@ pub fn progress_step(
 pub struct NextArgs {
     pub to: String,
     pub from: Option<String>,
-    /// `FM_NODE` of the writer.
+    /// `AUTOMATION_NODE` of the writer.
     pub env_node: Option<String>,
     pub text: Option<String>,
 }

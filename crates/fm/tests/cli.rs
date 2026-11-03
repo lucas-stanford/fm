@@ -639,14 +639,14 @@ fn progress_verbs_reach_the_run() {
     .unwrap();
     fx.fm()
         .args(["step", "a", "--status", "done"])
-        .env("FM_RUN", run)
+        .env("AUTOMATION_RUN", run)
         .assert()
         .code(0)
         .stdout("a done\n");
     fx.fm()
         .args(["status", "--json"])
-        .env("FM_RUN", run)
-        .env("FM_STATE_DIR", &fx.state)
+        .env("AUTOMATION_RUN", run)
+        .env("AUTOMATION_STATE_DIR", &fx.state)
         .assert()
         .code(0)
         .stdout(contains("\"status\":\"done\""));
@@ -654,7 +654,7 @@ fn progress_verbs_reach_the_run() {
         .args(["step", "a", "--status", "done"])
         .assert()
         .code(2)
-        .stderr(contains("fm: not inside a run — FM_RUN is not set"));
+        .stderr(contains("fm: not inside a run — AUTOMATION_RUN is not set"));
 }
 
 #[test]

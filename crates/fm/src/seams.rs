@@ -210,8 +210,8 @@ pub fn watcher_summary(env: &HostEnv, now: DateTime<Utc>) -> String {
     }
 }
 
-/// `fm step|next|say|note|message|status …`, `argv` starting with the verb. Reads `FM_RUN`,
-/// `FM_NODE` and `FM_STATE_DIR` from the environment.
+/// `fm step|next|say|note|message|status …`, `argv` starting with the verb. Reads `AUTOMATION_RUN`,
+/// `AUTOMATION_NODE` and `AUTOMATION_STATE_DIR` from the environment.
 pub fn progress(argv: &[String]) -> i32 {
     let out = fm_run::progress_cli(argv, &ProcessEnv, Utc::now());
     print!("{}", out.stdout);

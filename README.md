@@ -119,7 +119,7 @@ or `FM_NO_NOTIFY=1`, to turn that off. [docs/CLI.md](docs/CLI.md) lists every co
 ## Reporting from inside a run
 
 The body, its hooks and anything they start can report progress with `fm step`, `fm next`,
-`fm say`, `fm note`, `fm message` and `fm status`. fm sets `FM_RUN` for them, so these commands
+`fm say`, `fm note`, `fm message` and `fm status`. fm sets `AUTOMATION_RUN` for them, so these commands
 find the run from any folder, and the terminal UI and `fm log` show what they record. A body that
 opens a pull request might end with:
 

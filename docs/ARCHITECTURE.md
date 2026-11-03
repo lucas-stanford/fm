@@ -110,7 +110,7 @@ order. Choices beyond the spec, all as pi-automations makes them unless noted:
   removed after. If fm cannot make the worktree, the run is `failed` (`host`) and does not fall
   back to the usual folder.
 - Hook scripts get the scrubbed environment plus `AUTOMATION_*`; agent turns keep the login
-  environment. Both get `FM_RUN`, `FM_STATE_DIR`, `FM_NODE` (when the chart has the node) and
+  environment. Both get `AUTOMATION_RUN`, `AUTOMATION_STATE_DIR`, `AUTOMATION_NODE` (when the chart has the node) and
   `fm`'s folder first on `PATH`. Post hooks get `AUTOMATION_REASON`, set to the reason, else the
   error kind.
 - A polling thread reads stop requests with `fm_state::stop_requested`, which clears a stale
@@ -214,7 +214,7 @@ installed. [AGENTS.md](AGENTS.md) has each CLI's flags, models, resume and limit
   validation time: `hooks.pre[0].prompt: <cli> cannot continue a session — use a script hook, or another agent`.
 
 The agent learns the progress commands from a block fm appends to every prompt (as pa does), with
-`FM_RUN`, `FM_NODE` and `FM_STATE_DIR` in its environment: `fm step|next|say|note|message|status`.
+`AUTOMATION_RUN`, `AUTOMATION_NODE` and `AUTOMATION_STATE_DIR` in its environment: `fm step|next|say|note|message|status`.
 
 ## Conventions
 

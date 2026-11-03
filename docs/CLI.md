@@ -298,18 +298,18 @@ value turns them off for that process and every run it starts.
 | `VISUAL`, `EDITOR` | The editor `e` opens in the UI. |
 | `PI_AGENT_DIR` | Where pi-automations keeps its state, for the "also armed in pa" warning. Default `~/.pi/agent`. |
 | `XDG_STATE_HOME` | On Linux, the parent of the state folder. |
-| `FM_RUN`, `FM_NODE`, `FM_STATE_DIR` | Set by fm for a run's body and hooks; see [Inside a run](#inside-a-run). |
+| `AUTOMATION_RUN`, `AUTOMATION_NODE`, `AUTOMATION_STATE_DIR` | Set by fm for a run's body and hooks; see [Inside a run](#inside-a-run). |
 
 ## Inside a run
 
-The body, every hook and everything they start get `FM_RUN` (the run id), `FM_STATE_DIR` and, on a
-tracked run, `FM_NODE` (`body`, `pre0`, …). With those set, these commands report progress. They
+The body, every hook and everything they start get `AUTOMATION_RUN` (the run id), `AUTOMATION_STATE_DIR` and, on a
+tracked run, `AUTOMATION_NODE` (`body`, `pre0`, …). With those set, these commands report progress. They
 skip discovery, so they answer fast from any folder.
 
 | Command | Does |
 |---|---|
 | `fm step <node> [--status active\|waiting\|done\|failed\|skipped] [-m text]` | Sets one node. `active` by default. |
-| `fm next <to> [--from <node>] [-m text]` | Finishes `<node>` and starts `<to>`. `--from` defaults to `FM_NODE`, else the one running node. In a `flow: strict` run, the move must follow an arrow of the flowchart. |
+| `fm next <to> [--from <node>] [-m text]` | Finishes `<node>` and starts `<to>`. `--from` defaults to `AUTOMATION_NODE`, else the one running node. In a `flow: strict` run, the move must follow an arrow of the flowchart. |
 | `fm say <text> [--node <node>] [--request-id <key>]` | Adds an update to a node. |
 | `fm note <text> [--link "label=https://…"]… [--request-id <key>]` | A note on the run record, with the links it published. |
 | `fm message <text> [--link "label=https://…"]… [--request-id <key>]` | The run's one message for its reader. The last one wins. |
@@ -318,7 +318,7 @@ skip discovery, so they answer fast from any folder.
 Name a node by its id, or by its exact label when no other node has that label. Repeating the same
 `step` or `next` changes nothing the second time; `--request-id` makes `say`, `note` and `message`
 happen once however often you retry them. `-m` is short for `--message`. Every in-run command
-takes `--json`, and `--run <id>` to name a run when `FM_RUN` is not set.
+takes `--json`, and `--run <id>` to name a run when `AUTOMATION_RUN` is not set.
 
 They exit 0 when they made the change, 1 for a usage error (`USAGE`) or a link that is not `http`
 or `https` (`BAD_LINK`), and 2 when refused: `NO_RUN`, `UNKNOWN_RUN`, `RUN_CLOSED`, `NO_CHART`,
