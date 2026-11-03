@@ -14,7 +14,7 @@ You will write an automation that greets you with the date, arm it, run it by ha
 - A model you are logged in to with `pi /login`. Scheduled runs do not see API keys from your shell profile.
 
 > [!NOTE]
-> This tutorial uses pi-automations, but the file you write is plain Agent Automations Draft 0.1.0. Any host that implements the format runs it the same way. The [Quickstart](quickstart.md) has the same steps for any host.
+> This tutorial uses pi-automations, but the file you write is plain Agent Automations Draft 0.2.0. Any host that implements the format runs it the same way. The [Quickstart](quickstart.md) has the same steps for any host.
 
 ## Create the automation
 

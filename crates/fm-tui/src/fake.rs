@@ -104,6 +104,7 @@ fn automation(name: &str, description: &str, on: Triggers) -> Automation {
         hooks: Hooks::default(),
         flow: Flow::Loose,
         body: format!("Do what {name} does."),
+        nodes: Vec::new(),
     }
 }
 

@@ -17,7 +17,7 @@ This page is for people adding Agent Automations to an agent, an IDE or a CLI. I
 5. Run: one run per automation at a time, pre hooks, the body in a fresh session, post hooks, all within the timeout.
 6. Record every run, including the ones that were skipped before they started.
 
-Conformance is small on purpose: scan two folders, parse eight fields, keep a cron, run two hook lists, and keep every automation off until it is armed.
+Conformance is small on purpose: scan two folders, parse nine fields, keep a cron, run two hook lists, and keep every automation off until it is armed.
 
 ## Discover
 
@@ -52,7 +52,7 @@ Every message has the same shape, `<field path>: <what is wrong> — <what fixes
 > [!IMPORTANT]
 > Refuse what you do not implement, by name. A host without `on.watch` refuses the automation with `on.watch: this host implements schedule, manual`. It never ignores the trigger and runs the rest: an automation that runs differently from what its author wrote is worse than one that does not run.
 
-Validate the cron against the Draft 0.1.0 cron grammar yourself before handing it to a cron library. Most libraries accept more (`@daily`, `L`, `#`, six fields), and a host that accepts them makes files that fail on other hosts. Check the grammar first, and use the library only for date arithmetic.
+Validate the cron against the Draft 0.2.0 cron grammar yourself before handing it to a cron library. Most libraries accept more (`@daily`, `L`, `#`, six fields), and a host that accepts them makes files that fail on other hosts. Check the grammar first, and use the library only for date arithmetic.
 
 Some checks need the machine as well as the file. Do them at discovery too, so a run never fails at 07:00 for a reason that was knowable at 18:00:
 

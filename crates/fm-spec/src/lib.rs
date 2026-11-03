@@ -5,7 +5,7 @@
 //! `<field path>: <what is wrong> — <what fixes it>`: see [`Refusal`].
 //!
 //! - [`parse_automation`]: the file checks, in the specification's order.
-//! - [`cron`]: the Draft 0.1.0 grammar and date arithmetic in a zone, daylight saving included.
+//! - [`cron`]: the Draft 0.2.0 grammar and date arithmetic in a zone, daylight saving included.
 //! - [`discover()`], [`check_machine`]: finding automations and the checks that need the machine.
 //! - [`resolve_interpreter`]: which program starts a script, per OS.
 //! - [`digest_of`]: the consent pin.

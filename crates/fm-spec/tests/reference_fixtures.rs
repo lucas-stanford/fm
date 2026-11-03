@@ -8,11 +8,11 @@ const CASES: &[(&str, Option<&str>, &str)] = &[
     (
         "unknown-field",
         Some(
-            r#"budget: unknown field — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"#,
+            r#"budget: unknown field — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"#,
         ),
         r#"---
 name: unknown-field
-description: Uses a field Draft 0.1.0 does not define.
+description: Uses a field Draft 0.2.0 does not define.
 budget: 10
 on:
   manual: true
@@ -24,11 +24,11 @@ Body.
     (
         "unknown-fields",
         Some(
-            r#"budget, retries: unknown fields — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"#,
+            r#"budget, retries: unknown fields — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"#,
         ),
         r#"---
 name: unknown-fields
-description: Uses two fields Draft 0.1.0 does not define.
+description: Uses two fields Draft 0.2.0 does not define.
 retries: 3
 budget: 10
 on:

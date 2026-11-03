@@ -10,7 +10,7 @@ One name for each thing, in prose, UI text, messages and comments. The specifica
 | Use | For | Not |
 |---|---|---|
 | Agent Automations | the format's name | agent automations |
-| Draft 0.1.0 | the version | draft 0.1.0, v0.1.0, "the Draft grammar" |
+| Draft 0.2.0 | the version | draft 0.1.0, v0.1.0, "the Draft grammar" |
 | the specification | `specification.md`, in published prose | the spec (fine in contributor docs, comments and "the spec site") |
 | automation | a folder with `AUTOMATION.md` and its files | job, task, workflow, recipe |
 | `AUTOMATION.md` | the file, always in code font | automation.md, the AUTOMATION file |
@@ -136,7 +136,7 @@ and "running" differ from the status names; new UI should show the status name.
   Plain words when they read as ordinary English ("a failed run").
 - UI text has no code font and uses lowercase value words ("aborted", "armed").
 - Lowercase: pi, pi-automations, `pa`, fm, scope names, state and outcome words, check page, run
-  page. Capitalised: Agent Automations, Automation Manager, History, Runs tab, Draft 0.1.0, Mermaid,
+  page. Capitalised: Agent Automations, Automation Manager, History, Runs tab, Draft 0.2.0, Mermaid,
   YAML, Markdown, and the TUI section names.
 - Headings in sentence case. TUI keys are lowercase and bare: `e`, `w`, `space`, `enter`, `esc`.
 - "run id", "node id", "automation key": lowercase, two words.

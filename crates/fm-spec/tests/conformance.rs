@@ -246,8 +246,8 @@ fn run(doc: &str) -> (usize, usize) {
 #[test]
 fn validation_md_every_refusal() {
     let (all, invalid) = run("validation.md");
-    assert_eq!(invalid, 55, "validation.md lists 55 refusals");
-    assert_eq!(all, 55);
+    assert_eq!(invalid, 66, "validation.md lists 66 refusals");
+    assert_eq!(all, 66);
 }
 
 #[test]
@@ -259,7 +259,7 @@ fn specification_md_examples() {
 #[test]
 fn flowcharts_md_examples() {
     let (all, invalid) = run("flowcharts.md");
-    assert_eq!((all, invalid), (5, 3));
+    assert_eq!((all, invalid), (9, 6));
 }
 
 #[test]

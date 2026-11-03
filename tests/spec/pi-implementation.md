@@ -16,7 +16,7 @@ order: 4
 
 ## Validate
 
-pi-automations checks the cron against the Draft 0.1.0 cron grammar first and uses [croner](https://github.com/Hexagon/croner) only for date arithmetic. A `timeout` above its maximum (`4h` by default) makes the automation invalid.
+pi-automations checks the cron against the Draft 0.2.0 cron grammar first and uses [croner](https://github.com/Hexagon/croner) only for date arithmetic. A `timeout` above its maximum (`4h` by default) makes the automation invalid.
 
 ## Consent
 

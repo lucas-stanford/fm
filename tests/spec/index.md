@@ -70,7 +70,7 @@ An `AUTOMATION.md` does nothing on its own: a host has to discover it, keep the 
 
 ## Format version
 
-This site describes **Draft 0.1.0**, the initial specification. The frontmatter has a closed list of eight fields. A conforming host refuses anything it does not implement, names it, and says in one line what would fix it, so it never runs something different from what the author wrote. The optional [`flow`](flowcharts.md#flow-field) field controls [flowchart](flowcharts.md) tracking.
+This site describes **Draft 0.2.0**, the initial specification. The frontmatter has a closed list of nine fields. A conforming host refuses anything it does not implement, names it, and says in one line what would fix it, so it never runs something different from what the author wrote. The optional [`flow`](flowcharts.md#flow-field) field controls [flowchart](flowcharts.md) tracking, and the optional [`nodes`](flowcharts.md#nodes-field) field hands steps to their own agent.
 
 ## Get started
 
