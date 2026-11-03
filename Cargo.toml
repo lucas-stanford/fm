@@ -13,6 +13,13 @@ homepage = "https://github.com/lucas-stanford/fm"
 
 [workspace.dependencies]
 fm-render = { path = "crates/fm-render" }
+fm-model = { path = "crates/fm-model" }
+fm-spec = { path = "crates/fm-spec" }
+fm-state = { path = "crates/fm-state" }
+fm-agents = { path = "crates/fm-agents" }
+fm-run = { path = "crates/fm-run" }
+fm-clock = { path = "crates/fm-clock" }
+fm-tui = { path = "crates/fm-tui" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tempfile = "3.14"

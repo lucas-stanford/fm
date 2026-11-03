@@ -1,0 +1,18 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+broken-cron                                                       invalid · user
+
+  broken-cron has a problem in its file: on.schedule.cron: "0 9 * *" has 4
+  fields — a cron is five fields: minute hour day month weekday.
+
+  ❯ e      fix it
+    c      check: every technical detail
+
+
+
+
+
+
+enter do it · ↑↓ choose                                                 esc back

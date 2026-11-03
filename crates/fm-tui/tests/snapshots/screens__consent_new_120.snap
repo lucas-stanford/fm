@@ -1,0 +1,32 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Arm new-idea                                                                                             consent preview
+
+  schedule  30 7 * * 1, catch-up once
+  manual    allowed
+  agent     claude (Claude Code)
+  command   claude -p --output-format stream-json --verbose --model claude-sonnet-5 --permission-mode default
+  model     anthropic/claude-sonnet-5
+  timeout   20m
+  pre 0     script: python3 scripts/gather_notes.py
+  post 0    prompt: "Check the plan fits in one page."
+  files     AUTOMATION.md
+            scripts/gather_notes.py
+
+  Arming lets it run on this machine, with your credentials. Scripts run with your permissions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+y arm it                                                                                                esc leave it off

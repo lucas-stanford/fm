@@ -1,0 +1,12 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Automations                                       watcher on — last tick 12s ago
+
+  No automations yet
+
+  Put an AUTOMATION.md in ~/.agents/automations/<name>/, then press R
+
+
+R read again                                                     ? help · q quit

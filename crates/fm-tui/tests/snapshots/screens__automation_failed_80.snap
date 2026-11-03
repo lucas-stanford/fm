@@ -1,0 +1,28 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+nightly-tests                                                       armed · user
+
+  nightly-tests failed 6 hours ago. It runs again on its own tomorrow at
+  02:00, then daily.
+
+  Run the whole test suite every night and report what broke.
+
+  Agent      codex · Codex CLI
+  Last run   ✗ failed today 02:03 · took 3m
+             codex exited 1: tests could not start — node_modules is missing
+
+  ❯ r      run it again now
+    l      its runs
+    e      edit it
+    a      choose its agent
+    c      check: every technical detail
+    space  disable it
+           disarm it
+
+
+
+
+
+enter do it · ↑↓ choose                                                 esc back

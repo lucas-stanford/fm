@@ -234,17 +234,24 @@ fn a_missing_file_is_an_io_error() {
 }
 
 #[test]
-fn an_unknown_command_is_a_usage_error() {
-    for args in [&["status"][..], &["render"], &[]] {
-        let stderr = failed(&fm(args, None), 2);
-        assert!(stderr.contains("Usage: fm render"), "{args:?}: {stderr}");
-    }
+fn render_without_a_plan_is_a_usage_error() {
+    let stderr = failed(&fm(&["render"], None), 2);
+    assert!(stderr.contains("Usage: fm render"), "{stderr}");
+}
+
+#[test]
+fn an_unknown_command_is_refused() {
+    let stderr = failed(&fm(&["no-such-command"], None), 1);
+    assert!(stderr.contains("no-such-command"), "{stderr}");
 }
 
 #[test]
 fn help_and_version() {
     let help = ok(&fm(&["--help"], None));
-    assert!(help.contains("Usage: fm render"));
+    assert!(
+        help.contains("render") && help.contains("Draw a Mermaid flowchart"),
+        "{help}"
+    );
     let render_help = ok(&fm(&["render", "--help"], None));
     assert!(render_help.contains("--state <file|->"));
     assert!(render_help.contains("interrupted"));

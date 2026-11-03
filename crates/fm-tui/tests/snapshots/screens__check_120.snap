@@ -1,0 +1,34 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+pr-review · check
+
+  key            user:~/.agents/automations:pr-review
+  folder         ~/.agents/automations/pr-review
+  scope          user
+  state          armed
+  agent          codex
+  model          anthropic/claude-sonnet-5
+  timeout        30m
+  enabled        true
+  flow           loose
+  flowchart      none
+  watch          scripts/new_prs.mjs every 10m
+  last check     3m ago · exit 0 · took 1s
+  it said        2 new pull requests: #481, #482
+  next check     in 7m
+  last run       ok · just now · took 3m
+
+
+
+
+
+
+
+
+
+
+
+
+e edit                                                                                                          esc back

@@ -71,14 +71,19 @@ enum Invocation {
 
 /// `fm <argv…>` where `argv[0]` is `render`, `--help` or `--version`: parse, draw and print.
 pub fn render_command(argv: &[String]) -> ExitCode {
+    ExitCode::from(render_status(argv))
+}
+
+/// [`render_command`], as the exit status: 0 success, 1 I/O or render failure, 2 bad input.
+pub fn render_status(argv: &[String]) -> u8 {
     match run(argv) {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(()) => 0,
         Err(failure) => {
             eprintln!("fm: {failure}");
             if failure.code == Code::Usage {
                 eprintln!("\n{SHORT_USAGE}\nRun 'fm render --help' for details.");
             }
-            ExitCode::from(failure.code.exit())
+            failure.code.exit()
         }
     }
 }

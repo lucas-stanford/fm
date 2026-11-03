@@ -1,0 +1,28 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Arm standup-notes                                                consent preview
+
+  ! also armed in pi-automations — it would run twice
+
+  schedule  0 9 * * 1-5 (America/Los_Angeles), catch-up once
+  agent     copilot (GitHub Copilot CLI)
+  command   copilot -p <prompt> --model claude-sonnet-5 --no-color --log-level
+            none
+  model     anthropic/claude-sonnet-5
+  timeout   30m
+  files     AUTOMATION.md
+
+  Arming lets it run on this machine, with your credentials. Scripts run with
+  your permissions.
+
+
+
+
+
+
+
+
+
+y arm it                                                        esc leave it off

@@ -1,0 +1,14 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Stop daily-briefing's run?
+
+  It has been running for 2 minutes. Its post hooks still run, and the run is recorded as aborted.
+
+
+
+
+
+
+y stop it                                                                                            esc keep it running

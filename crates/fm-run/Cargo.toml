@@ -1,0 +1,36 @@
+[package]
+name = "fm-run"
+description = "The run engine: lock, hooks, the agent session, the record, and progress reporting"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fm-model.workspace = true
+fm-spec.workspace = true
+fm-state.workspace = true
+fm-agents.workspace = true
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+
+[lints]
+workspace = true
+
+[target."cfg(windows)".dependencies]
+win32job = "2.0.3"
+
+[target."cfg(unix)".dependencies]
+nix = { version = "0.31.3", features = ["signal"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+# A stand-in agent CLI for this crate's tests: fm-agents' fake agent, plus the progress verbs, so
+# a test run can report progress the way a real agent does.
+[[bin]]
+name = "fm-run-fake-agent"
+path = "src/bin/fm-run-fake-agent.rs"
+test = false
+doc = false

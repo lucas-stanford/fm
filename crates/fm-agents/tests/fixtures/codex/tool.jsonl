@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"0199a214-11d2-7a31-9f0e-5c6b7a8d9e0f"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"**Reading the file**"}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"powershell.exe -Command 'Get-Content hello.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"powershell.exe -Command 'Get-Content hello.txt'","aggregated_output":"banana split\r\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"banana"}}
+{"type":"turn.completed","usage":{"input_tokens":4820,"cached_input_tokens":4096,"output_tokens":31,"reasoning_output_tokens":8}}

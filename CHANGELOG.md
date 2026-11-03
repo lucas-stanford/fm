@@ -8,6 +8,20 @@ This file records every notable change. The format follows
 
 First public release.
 
+- fm runs Agent Automations. The host that was `aat` in the agent-automations repository moves
+  here and becomes `fm`: discovery and validation of `AUTOMATION.md` exactly as the specification
+  says, consent, schedules, watches, the OS watcher, runs through pi, GitHub Copilot CLI, Claude
+  Code, Codex CLI, Gemini CLI or OpenCode, run records, progress on a flowchart, and the terminal
+  UI (`fm` with no command). Its environment variables are `FM_*` (`FM_HOME`, `FM_RUN`, …), its
+  watcher job is `io.agentautomations.fm.tick` on macOS, and its state folder is unchanged.
+- A run page draws the run's flowchart in-process, so `fm-path` in `config.toml` and `FM_BIN` are
+  gone.
+- fm is a Cargo workspace: the renderer is the `fm-render` library, the host is `fm-model`,
+  `fm-spec`, `fm-state`, `fm-agents`, `fm-run`, `fm-clock` and `fm-tui`, and the `flow-manager`
+  package builds the `fm` binary.
+- The terminal UI uses ratatui 0.30.
+- `tests/spec/` holds the specification's pages; the conformance tests run every example in them.
+
 - `fm render` draws a Mermaid flowchart with a status on each node, as plain
   text (no escape codes) or as a standalone, sanitised SVG.
 - Node statuses and arrows taken come from an optional JSON state: `pending`,

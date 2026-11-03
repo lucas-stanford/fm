@@ -1,0 +1,14 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Links                                                                    2 links
+
+  ❯ 1  Slack thread  https://acme.slack.com/archives/C01/p1730127840
+    2  event         https://calendar.example.com/e/5521
+
+
+
+
+
+enter open it · ↑↓ choose · 1-9 open that one                           esc back
