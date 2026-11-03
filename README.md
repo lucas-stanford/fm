@@ -85,6 +85,36 @@ fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|l
 Only one of `--plan` and `--state` can read stdin. In SVG output every node
 group carries `data-id="<nodeId>"`, so a page can find a node by its id.
 
+### When the text layout cannot route a chart
+
+merman's text layout cannot yet route every flowchart. A chart where many
+arrows cross, such as several steps that can each stop early and jump to the
+same final step, is one example. For such a chart, `--format text` draws a
+rail instead of failing. The nodes run down one column in flow order,
+whatever direction the chart asks for. An arrow to the node drawn below runs
+between the boxes, and every other arrow is written beside its source and
+points up (`▲`) or down (`▼`) to its target, or round (`↺`) to the node itself:
+
+```text
+┌────────────────────┐
+│      Build ✓       │
+└──────────┬─────────┘
+           ┃
+           ▼
+┌────────────────────┐
+│      Check ▶       │──▲ Build (first failure)
+│                    │──▼ Write the report (second failure)
+└──────────┬─────────┘
+           │
+           ▼
+┌────────────────────┐
+│      Review ·      │──▼ Write the report (no review)
+└──────────┬─────────┘
+```
+
+That is part of [`fixtures/plans/exits.mmd`](fixtures/plans/exits.mmd), mid-run.
+A taken arrow is drawn heavy (`┃`, `━━▲`). SVG output is never affected.
+
 ## State
 
 ```json

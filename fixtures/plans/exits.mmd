@@ -1,0 +1,17 @@
+%% A pipeline whose steps can each stop early: four exits run into one node.
+%% merman's text layout cannot route them all, so fm draws this as a rail.
+flowchart TD
+  start[Pick the work] --> read[Read it]
+  read -->|nothing to do| report[Write the report]
+  read --> build[Build]
+  build --> check[Check]
+  check -->|first failure| build
+  check -->|second failure| report
+  check --> review[Review]
+  review -->|no review| report
+  review --> merge[Merge]
+  merge -->|blocked| report
+  merge -->|release| release[Release]
+  merge --> close[Close]
+  release --> close
+  close --> report

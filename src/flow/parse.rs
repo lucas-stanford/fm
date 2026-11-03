@@ -160,7 +160,7 @@ fn statement(flow: &mut Flow, line: &str, at: &Line<'_>) -> Result<()> {
     let mut source = record_node(flow, first);
 
     while !rest.is_empty() {
-        let Some(consumed) = arrow_len(rest) else {
+        let Some((consumed, label)) = arrow(rest) else {
             return Err(unsupported(
                 at,
                 column_of(at.raw, rest),
@@ -185,6 +185,7 @@ fn statement(flow: &mut Flow, line: &str, at: &Line<'_>) -> Result<()> {
         flow.edges.push(Edge {
             from: source,
             to: target.clone(),
+            label,
         });
         source = target;
     }
@@ -332,9 +333,9 @@ fn unquote(body: &str) -> String {
     trimmed.to_string()
 }
 
-/// Length of the arrow at the start of `rest`, including a label written as
-/// `-->|text|` or `-- text -->`.
-fn arrow_len(rest: &str) -> Option<usize> {
+/// The arrow at the start of `rest`: its length, including a label written as
+/// `-->|text|` or `-- text -->`, and that label.
+fn arrow(rest: &str) -> Option<(usize, Option<String>)> {
     if let Some(inline) = rest.strip_prefix("--")
         && !inline.starts_with(['-', '>', 'o', 'x', '.'])
     {
@@ -342,7 +343,7 @@ fn arrow_len(rest: &str) -> Option<usize> {
             if let Some(end) = inline.find(token)
                 && !inline[..end].trim().is_empty()
             {
-                return Some(2 + end + token.len());
+                return Some((2 + end + token.len(), edge_label(&inline[..end])));
             }
         }
     }
@@ -351,9 +352,13 @@ fn arrow_len(rest: &str) -> Option<usize> {
     if let Some(pipe) = after.strip_prefix('|')
         && let Some(end) = pipe.find('|')
     {
-        return Some(token.len() + 1 + end + 1);
+        return Some((token.len() + 1 + end + 1, edge_label(&pipe[..end])));
     }
-    Some(token.len())
+    Some((token.len(), None))
+}
+
+fn edge_label(text: &str) -> Option<String> {
+    Some(unquote(text)).filter(|label| !label.is_empty())
 }
 
 fn first_token(rest: &str) -> &str {
@@ -474,6 +479,15 @@ mod tests {
         .expect("parse");
         assert_eq!(flow.edges.len(), 10);
         assert_eq!(edges(&flow)[9], ("j", "k"));
+    }
+
+    #[test]
+    fn an_edge_keeps_the_label_written_on_its_arrow() {
+        let flow =
+            parse("flowchart LR\n a -->|yes| b\n b -- \"not yet\" --> c\n c --> d\n d -->||e\n")
+                .expect("parse");
+        let labels: Vec<Option<&str>> = flow.edges.iter().map(|e| e.label.as_deref()).collect();
+        assert_eq!(labels, [Some("yes"), Some("not yet"), None, None]);
     }
 
     #[test]

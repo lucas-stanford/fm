@@ -1,6 +1,8 @@
-//! Rendering: the plan plus its state, decorated as Mermaid, drawn by merman.
+//! Rendering: the plan plus its state, decorated as Mermaid, drawn by merman, or laid out as a
+//! rail when merman's text layout cannot route it.
 
 pub mod decorate;
+pub mod rail;
 pub mod svg;
 pub mod text;
 pub mod theme;
