@@ -19,6 +19,8 @@ pub struct Node {
 pub struct Edge {
     pub from: String,
     pub to: String,
+    /// The text on the arrow, written `-->|yes|` or `-- yes -->`.
+    pub label: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

@@ -143,6 +143,25 @@ fn subgraphs_render_as_identified_clusters() {
     );
 }
 
+/// `fixtures/plans/exits.mmd` is the plan that exercises fm's text fallback. When merman learns
+/// to route it, pick another plan merman refuses, or the rail goes untested end to end.
+#[test]
+fn the_ascii_renderer_still_cannot_route_the_exits_fixture() {
+    let plan = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/plans/exits.mmd"),
+    )
+    .expect("exits fixture");
+    let outcome = Renderer::new().render(RenderRequest::ascii(
+        &plan,
+        OperationControl::new(),
+        merman::AsciiRequest::default(),
+    ));
+    assert!(
+        outcome.is_err(),
+        "merman now draws exits.mmd as text; it no longer exercises the rail"
+    );
+}
+
 /// Returns the opening `<g …>` tag of a node group, by the merman id scheme.
 fn node_group<'a>(svg: &'a str, node_id: &str) -> &'a str {
     tag_at(svg, &format!("id=\"merman-flowchart-{node_id}-"), node_id)

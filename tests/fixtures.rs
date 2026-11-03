@@ -99,6 +99,22 @@ fn every_fixture_plan_renders_as_text_and_svg_with_a_state() {
 }
 
 #[test]
+fn a_plan_merman_cannot_route_is_drawn_as_a_rail_with_every_arrow() {
+    let text = render(&fixtures().join("exits.mmd"), &[]);
+    for exit in [
+        "──▼ Write the report (nothing to do)",
+        "──▲ Build (first failure)",
+        "──▼ Write the report (second failure)",
+        "──▼ Write the report (no review)",
+        "──▼ Write the report (blocked)",
+        "──▼ Close",
+        "│ release",
+    ] {
+        assert!(text.contains(exit), "missing {exit:?}:\n{text}");
+    }
+}
+
+#[test]
 fn the_invalid_fixture_is_refused_with_a_position() {
     let plan = fixtures().join("invalid.mmd").display().to_string();
     let output = fm(&["render", "--plan", &plan]);

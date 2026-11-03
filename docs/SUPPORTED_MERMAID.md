@@ -61,6 +61,12 @@ a --> b --> c    chain: two arrows
 Whitespace around arrows is optional (`a-->b`). Cycles are fine. A `taken`
 pair in the state highlights every arrow from `from` to `to`.
 
+In text output, a flowchart merman cannot route is drawn as a rail: one
+column in flow order, with each arrow that does not run to the node below
+written beside its source as `──▼ <target> (<label>)`. The rail shows nodes,
+arrows, arrow labels and statuses. It leaves out subgraph boxes, node shapes
+and arrow styles. See the [README](../README.md#when-the-text-layout-cannot-route-a-chart).
+
 ## Subgraphs
 
 ```

@@ -16,4 +16,8 @@ First public release.
 - A documented Mermaid flowchart subset, with `line:col` errors for anything
   outside it.
 - Exit status 2 for bad input, 1 for I/O or render failures.
+- When merman's text layout cannot route a flowchart, text output falls back to
+  a one-column rail with every arrow written beside its source, instead of
+  failing with `routes crossing reserved graph geometry` or `unroutable graph
+  edges`.
 - Install scripts for prebuilt Linux, macOS and Windows release binaries.

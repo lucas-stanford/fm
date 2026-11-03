@@ -1,20 +1,25 @@
 //! Text output. It never contains an escape code, so it pastes straight into a
 //! Markdown fence.
 
-use crate::error::{Code, Result, fail};
+use crate::error::Result;
 use crate::flow::Flow;
 use crate::render::decorate::{self, Mode};
+use crate::render::rail;
 use crate::render::theme::Theme;
 use crate::state::State;
 
 pub fn render(plan: &str, flow: &Flow, state: &State) -> Result<String> {
     // The theme only colours `classDef`s, which the ASCII renderer ignores.
     let source = decorate::decorate(plan, flow, state, Mode::Text, Theme::Light);
-    let text = render_source(&source)?;
-    Ok(tighten(&text))
+    // merman's text layout cannot route every flowchart yet; the rail draws any of them.
+    Ok(match render_source(&source) {
+        Some(text) => tighten(&text),
+        None => rail::render(flow, state),
+    })
 }
 
-fn render_source(source: &str) -> Result<String> {
+/// merman's drawing, or `None` when it cannot draw this flowchart.
+fn render_source(source: &str) -> Option<String> {
     use merman::{OperationControl, RenderOutput, RenderRequest, Renderer};
 
     let output = Renderer::new()
@@ -23,10 +28,10 @@ fn render_source(source: &str) -> Result<String> {
             OperationControl::new(),
             merman::AsciiRequest::default(),
         ))
-        .map_err(|error| fail!(Code::Render, "the text renderer failed: {error}"))?;
+        .ok()?;
     match output {
-        RenderOutput::Ascii(Some(ascii)) => Ok(ascii.text),
-        _ => Err(fail!(Code::Render, "the text renderer produced no output")),
+        RenderOutput::Ascii(Some(ascii)) => Some(ascii.text),
+        _ => None,
     }
 }
 
