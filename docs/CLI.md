@@ -55,6 +55,20 @@ Draws a Mermaid flowchart with node statuses, as text or SVG, and prints it (or 
 keeps its own exit codes: `0` success, `1` reading, writing or rendering failed, `2` bad arguments,
 flowchart or state. [RENDER.md](RENDER.md) has every option and the state JSON.
 
+### `fm validate`
+
+```text
+fm validate <AUTOMATION.md|folder> [--name <folder name>] [--json]
+```
+
+Checks one `AUTOMATION.md` as the specification says, with no state folder, discovery or consent:
+the file and its body, every field, the flowchart for `flow: strict`, and `nodes`. It does not run
+the checks that need this machine (scripts runnable, the agent and model, the host's maximum
+timeout); `fm check` does. `name` is checked against the file's folder, or `--name`. It prints
+`<name>: valid` and exits 0, or prints the first refusal (`<field>: <what is wrong> — <what fixes
+it>`) on stderr and exits 2. `--json` prints `{"ok": true, "name": …}` or `{"ok": false, "error":
+…}` on stdout instead.
+
 ### `fm list`
 
 ```

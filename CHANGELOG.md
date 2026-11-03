@@ -31,6 +31,8 @@ First public release.
   timeout. fm checks each node can run here, shows its agent and command in the consent preview,
   tells the body which steps to hand over, and runs one with `fm node <id>`: the step's section, the
   run's input and the body's handoff, through the node's agent, answering on stdout.
+- `fm validate <AUTOMATION.md|folder>` checks one file as the specification says, without a state
+  folder or discovery: `<name>: valid`, or the first refusal.
 
 - `fm render` draws a Mermaid flowchart with a status on each node, as plain
   text (no escape codes) or as a standalone, sanitised SVG.

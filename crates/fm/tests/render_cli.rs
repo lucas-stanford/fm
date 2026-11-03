@@ -286,3 +286,45 @@ fn help_and_version() {
     let version = ok(&fm(&["--version"], None));
     assert_eq!(version.trim(), format!("fm {}", env!("CARGO_PKG_VERSION")));
 }
+
+#[test]
+fn validate_checks_one_file_as_the_specification_says() {
+    let dir = tempfile::tempdir().unwrap();
+    let folder = dir.path().join("demo");
+    std::fs::create_dir_all(&folder).unwrap();
+    let file = folder.join("AUTOMATION.md");
+    std::fs::write(
+        &file,
+        "---\nname: demo\ndescription: d\non:\n  manual: true\n---\n\nRun.\n",
+    )
+    .unwrap();
+    let folder_arg = folder.display().to_string();
+    assert_eq!(
+        ok(&fm(&["validate", &folder_arg], None)).trim(),
+        "demo: valid"
+    );
+
+    std::fs::write(
+        &file,
+        "---\nname: demo\ndescription: d\nbudget: 5\non:\n  manual: true\n---\n\nRun.\n",
+    )
+    .unwrap();
+    let stderr = failed(&fm(&["validate", &file.display().to_string()], None), 2);
+    assert_eq!(
+        stderr.trim(),
+        "budget: unknown field — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"
+    );
+    let out = fm(
+        &["validate", &folder_arg, "--json", "--name", "other"],
+        None,
+    );
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["ok"], false);
+    assert!(
+        v["error"]
+            .as_str()
+            .unwrap()
+            .starts_with("budget: unknown field"),
+        "{v}"
+    );
+}

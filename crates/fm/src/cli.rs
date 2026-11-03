@@ -73,6 +73,17 @@ pub enum Cmd {
         #[arg(long)]
         fake: bool,
     },
+    /// Check one AUTOMATION.md as the specification says: valid, or the first refusal
+    Validate {
+        /// An AUTOMATION.md, or the folder that holds one
+        path: std::path::PathBuf,
+        /// The folder name to check `name` against, when it is not the file's folder
+        #[arg(long)]
+        name: Option<String>,
+        /// The answer as one JSON object: {"ok": true, "name": …} or {"ok": false, "error": …}
+        #[arg(long)]
+        json: bool,
+    },
     /// List every automation, grouped by scope
     List {
         /// Every automation as one JSON array
@@ -290,6 +301,46 @@ fn pick(host: &mut RealHost, name: &str) -> Result<Status, i32> {
     }
 }
 
+/// `fm validate`: the file alone, without the machine checks (`fm check` does those).
+fn validate(path: &std::path::Path, name: Option<&str>, json: bool) -> i32 {
+    let file = if path.is_dir() {
+        path.join("AUTOMATION.md")
+    } else {
+        path.to_path_buf()
+    };
+    let dir_name = name.map(str::to_string).unwrap_or_else(|| {
+        file.parent()
+            .and_then(|d| d.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    });
+    let answer = std::fs::read_to_string(&file)
+        .map_err(|e| format!("{}: {e}", file.display()))
+        .and_then(|text| {
+            fm_spec::parse_automation(&text, &dir_name)
+                .map(|(a, _)| a.name)
+                .map_err(|r| r.to_string())
+        });
+    match (answer, json) {
+        (Ok(name), true) => {
+            out!("{}", serde_json::json!({"ok": true, "name": name}));
+            EXIT_OK
+        }
+        (Ok(name), false) => {
+            out!("{name}: valid");
+            EXIT_OK
+        }
+        (Err(e), true) => {
+            out!("{}", serde_json::json!({"ok": false, "error": e}));
+            EXIT_REFUSED
+        }
+        (Err(e), false) => {
+            eprintln!("{e}");
+            EXIT_REFUSED
+        }
+    }
+}
+
 fn act(r: Result<String, String>) -> i32 {
     match r {
         Ok(line) => {
@@ -302,6 +353,10 @@ fn act(r: Result<String, String>) -> i32 {
 
 pub fn run(cli: Cli) -> anyhow::Result<i32> {
     let cmd = cli.cmd.unwrap_or(Cmd::Tui { fake: false });
+    // A file check needs no state folder, config or discovery.
+    if let Cmd::Validate { path, name, json } = &cmd {
+        return Ok(validate(path, name.as_deref(), *json));
+    }
     if let Cmd::Tui { fake: true } = cmd {
         fm_tui::run_fake(fm_tui::TuiOptions::from_env()).context("terminal UI")?;
         return Ok(EXIT_OK);
@@ -328,6 +383,7 @@ pub fn run(cli: Cli) -> anyhow::Result<i32> {
     Ok(match cmd {
         Cmd::Tui { .. } => unreachable!("handled above"),
         Cmd::Render { .. } => unreachable!("`fm render` is handled before parsing"),
+        Cmd::Validate { .. } => unreachable!("handled above"),
         Cmd::List { json } => {
             let all = host.statuses();
             if json {
