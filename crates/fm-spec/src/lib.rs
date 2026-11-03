@@ -50,4 +50,6 @@ pub use parse::{
     set_enabled_in_place, split_frontmatter,
 };
 pub use refusal::Refusal;
-pub use strict_flow::{FlowProblem, check_strict_flow, flow_problem_line, plain_text};
+pub use strict_flow::{
+    FlowProblem, StepSection, check_strict_flow, flow_problem_line, plain_text, step_sections,
+};

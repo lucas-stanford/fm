@@ -130,6 +130,22 @@ fm message "Reviewed 3 files; one question for you in the PR."
 
 [docs/CLI.md](docs/CLI.md#inside-a-run) lists their flags and exit codes.
 
+### A step on its own agent
+
+`nodes:` hands a step of a strict flowchart to another agent CLI or model, so one run can have one
+agent fix and another review:
+
+```yaml
+flow: strict
+nodes:
+  build: { agent: claude, model: anthropic/claude-opus-4-5:high, timeout: 90m }
+  review: codex
+```
+
+fm tells the body which steps those are. When it reaches one, the body runs `fm node <id> -m "…"`:
+fm runs that step's section through the node's agent, with the run's input and what the body handed
+over, and prints the answer. The consent preview shows each node's agent and command.
+
 ## The terminal UI
 
 `fm` with no command opens it; `fm tui --fake` opens it on demo data.

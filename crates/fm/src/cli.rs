@@ -39,6 +39,8 @@ Inside a run (AUTOMATION_RUN is set for the body, every hook and what they start
                         a note on the run's record, with the links it published
   fm message <text> [--link \"label=https://…\"]… [--request-id <key>]
                         the run's one message for its reader; the last one wins
+  fm node <id> [-m <text>] [--cwd <dir>]
+                        hand a step listed in nodes: to its own agent, and print its answer
   fm status             where the run is: every node, the arrows taken, the notes, the message
                         every in-run command takes --json: one object on stdout, ok or not
 
@@ -247,6 +249,16 @@ pub fn main() -> i32 {
     if let Some(verb) = argv.get(1) {
         if IN_RUN_VERBS.contains(&verb.as_str()) {
             return seams::progress(&argv[1..]);
+        }
+        // `fm node` runs a step of the run it is called from, through the step's own agent.
+        if verb == "node" {
+            return match crate::env::HostEnv::from_process() {
+                Ok(env) => seams::node(&env, &argv[2..]),
+                Err(e) => {
+                    eprintln!("{e:#}");
+                    EXIT_ERROR
+                }
+            };
         }
         // `fm render` keeps its own parser, messages and exit codes (0, 1 I/O, 2 bad input).
         if verb == "render" {

@@ -313,6 +313,7 @@ skip discovery, so they answer fast from any folder.
 | `fm say <text> [--node <node>] [--request-id <key>]` | Adds an update to a node. |
 | `fm note <text> [--link "label=https://…"]… [--request-id <key>]` | A note on the run record, with the links it published. |
 | `fm message <text> [--link "label=https://…"]… [--request-id <key>]` | The run's one message for its reader. The last one wins. |
+| `fm node <id> [-m text \| --file path] [--cwd dir] [--json]` | Hands a step to its own agent, as `nodes:` says (a step it does not list runs on the body's agent), and prints the agent's answer. The step gets its section, the text before the first section, what `-m` or `--file` hands over and the run's input; it runs in the body's folder or `--cwd`, within what is left of the run's timeout. Exits 0 answered, 2 refused (not a step, no section, not inside a body), 20 the agent did not answer, 30 stopped or out of time. |
 | `fm status [--format markdown]` | Where the run is: every node, the arrows taken, the notes, the message. `--json` adds `history`: every step, decision (`next`, with its `-m`) and update, in order. |
 
 Name a node by its id, or by its exact label when no other node has that label. Repeating the same

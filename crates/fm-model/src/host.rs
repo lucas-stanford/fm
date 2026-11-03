@@ -17,6 +17,8 @@ pub struct ConsentPreview {
     pub agent_command: Option<String>,
     /// `(phase, what runs)`, the exact command for scripts.
     pub hooks: Vec<(String, String)>,
+    /// `(step id, what runs it)`: each `nodes:` entry's agent, model and command.
+    pub nodes: Vec<(String, String)>,
     /// `on.watch`: the exact command and how often.
     pub watch: Option<String>,
     /// Files whose content the consent is pinned to.

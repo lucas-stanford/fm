@@ -66,6 +66,8 @@ struct Ctx<'a> {
 /// The agent's part of the machine check: the model resolves through the chosen CLI, and prompt
 /// hooks can continue its session.
 pub fn agent_check(config: &Config, l: &Located) -> Result<(), String> {
+    // A step handed to an agent fm cannot run, or a model that agent cannot serve, cannot run here.
+    fm_run::node::plan_nodes(config, l)?;
     let Some(cli) = config.agent_for(&l.key) else {
         return Ok(());
     };
@@ -599,6 +601,40 @@ impl RealHost {
             ));
         }
 
+        let mut nodes = Vec::new();
+        for n in &a.nodes {
+            match fm_run::node::plan_node(config, l, n) {
+                Ok(p) => {
+                    let (program, exists) = program_for(p.cli, &p.settings, &self.env);
+                    if !exists {
+                        warnings.push(format!(
+                            "nodes.{}: {} not found — install it, or set [agents.{}] path in config.toml",
+                            n.id, p.cli, p.cli
+                        ));
+                    }
+                    let shown = format!("<the {} step>", n.id);
+                    let turn = TurnRequest {
+                        prompt: shown.clone(),
+                        model: p.model.clone(),
+                        cwd: l.repo_root.clone().unwrap_or_else(|| l.dir.clone()),
+                        resume: None,
+                        settings: p.settings.clone(),
+                    };
+                    let command = adapter(p.cli).plan_turn(program, &turn).display(&shown);
+                    let bound = n
+                        .timeout
+                        .as_deref()
+                        .map(|t| format!(", at most {t}"))
+                        .unwrap_or_default();
+                    nodes.push((
+                        n.id.clone(),
+                        format!("{} ({}{bound}) — {command}", p.cli, p.model.display),
+                    ));
+                }
+                Err(e) => warnings.push(e),
+            }
+        }
+
         let mut hooks = Vec::new();
         for (phase, list) in [("pre", &a.hooks.pre), ("post", &a.hooks.post)] {
             for (i, h) in list.iter().enumerate() {
@@ -642,6 +678,7 @@ impl RealHost {
             agent,
             agent_command,
             hooks,
+            nodes,
             watch: a
                 .on
                 .watch

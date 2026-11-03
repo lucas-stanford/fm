@@ -27,6 +27,10 @@ First public release.
   `history`, every step, each decision (`fm next`, with its `-m` saying why), each update, note and
   message. `fm status --format markdown` is the run as a page: its chart, a table of its steps with
   how long each took, and that timeline.
+- `nodes:` (Draft 0.2.0): a step of a strict flowchart can run through its own agent CLI, model and
+  timeout. fm checks each node can run here, shows its agent and command in the consent preview,
+  tells the body which steps to hand over, and runs one with `fm node <id>`: the step's section, the
+  run's input and the body's handoff, through the node's agent, answering on stdout.
 
 - `fm render` draws a Mermaid flowchart with a status on each node, as plain
   text (no escape codes) or as a standalone, sanitised SVG.

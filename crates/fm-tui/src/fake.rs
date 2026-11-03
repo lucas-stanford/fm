@@ -1076,6 +1076,7 @@ impl Host for FakeHost {
             files,
             warnings,
             expires: (s.scope == Scope::Repository).then(|| "in 30 days, on Nov 28".into()),
+            nodes: Vec::new(),
         })
     }
 

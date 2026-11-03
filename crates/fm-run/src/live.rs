@@ -84,6 +84,25 @@ impl LiveWriter {
         }
     }
 
+    /// Add to a run's live file that another process started: a node's turn, beside its body.
+    pub fn append(file: impl Into<PathBuf>) -> LiveWriter {
+        let file = file.into();
+        let mut o = OpenOptions::new();
+        o.create(true).append(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            o.mode(0o600);
+        }
+        let out = o.open(&file).ok();
+        LiveWriter {
+            file,
+            out,
+            last_partial_at: None,
+            last_partial: String::new(),
+        }
+    }
+
     pub fn path(&self) -> &Path {
         &self.file
     }
