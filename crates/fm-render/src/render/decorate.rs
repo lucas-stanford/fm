@@ -16,6 +16,9 @@ pub enum Mode {
     Svg,
     /// One line: the ASCII renderer does not honour `<br/>`.
     Text,
+    /// For a Markdown ```mermaid block: colours and highlighted arrows only. The author's labels
+    /// stay as written, because `id@{ … }` needs a newer Mermaid than every viewer has.
+    Markdown,
 }
 
 pub fn decorate(plan: &str, flow: &Flow, state: &State, mode: Mode, theme: Theme) -> String {
@@ -39,6 +42,7 @@ pub fn decorate(plan: &str, flow: &Flow, state: &State, mode: Mode, theme: Theme
         let label = match mode {
             Mode::Svg => format!("{}<br/>{glyph}", escape(&node.label)),
             Mode::Text => format!("{} {glyph}", escape(&node.label)),
+            Mode::Markdown => continue,
         };
         out.push_str(&format!("  {}@{{ label: \"{label}\" }}\n", node.id));
     }
@@ -198,7 +202,7 @@ mod tests {
     fn the_decorated_output_is_always_renderable() {
         let json =
             r#"{"nodes": {"fetch": "done", "build": "failed"}, "taken": [["fetch", "build"]]}"#;
-        for mode in [Mode::Svg, Mode::Text] {
+        for mode in [Mode::Svg, Mode::Text, Mode::Markdown] {
             let output = decorated(json, mode);
             crate::flow::parse::validate_renderable(&output)
                 .unwrap_or_else(|error| panic!("{mode:?} output is not renderable: {error}"));

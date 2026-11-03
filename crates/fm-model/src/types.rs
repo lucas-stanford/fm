@@ -374,6 +374,51 @@ pub struct RunNote {
     pub links: Vec<RunLink>,
 }
 
+/// One thing a tracked run reported, in the order it happened: every step it set, every arrow it
+/// took with why, every update, note and message. The decisions are the `next` entries.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum HistoryEntry {
+    /// A node set directly: `step <node> --status <s> [-m text]`.
+    Step {
+        at: String,
+        node: String,
+        status: StepStatus,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+    },
+    /// An arrow taken: `next <to> --from <from> [-m why]`.
+    Next {
+        at: String,
+        from: String,
+        to: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+    },
+    /// An update on a node: `say <text>`.
+    Say {
+        at: String,
+        node: String,
+        text: String,
+    },
+    /// Something the run published: `note <text> --link …`.
+    Note {
+        at: String,
+        text: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        links: Vec<RunLink>,
+    },
+    /// The run's message for its reader: `message <text> --link …`.
+    Message {
+        at: String,
+        text: String,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        links: Vec<RunLink>,
+    },
+    /// The run ended.
+    Close { at: String, outcome: String },
+}
+
 /// What a tracked run reported, folded into the record at its end.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RunProgress {
@@ -384,6 +429,9 @@ pub struct RunProgress {
     pub notes: Vec<RunNote>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<RunNote>,
+    /// Everything it reported, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub history: Vec<HistoryEntry>,
 }
 
 /// One line of an automation's run history. Every run, and every skipped or missed instant.
@@ -433,6 +481,9 @@ pub struct RunRecord {
     pub notes: Vec<RunNote>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<RunNote>,
+    /// Everything the run reported on its flowchart, in order: steps, decisions, updates.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub history: Vec<HistoryEntry>,
     /// Missed records: how many instants this one covers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<u32>,

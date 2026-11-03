@@ -183,6 +183,7 @@ fn base_record(l: &Located, trigger: Trigger, outcome: Outcome, now: DateTime<Ut
         message: None,
         count: None,
         pid: None,
+        history: Vec::new(),
     }
 }
 

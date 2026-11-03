@@ -5,7 +5,7 @@
 
 use chrono::{DateTime, Utc};
 use fm_model::StatePaths;
-use fm_model::{RunLink, RunNote, StepStatus};
+use fm_model::{HistoryEntry, RunLink, RunNote, StepStatus};
 use fm_state::progress::{SETTABLE, strip_controls};
 use fm_state::{
     Env, LinkedArgs, NextArgs, Os, ProgressCode, ProgressError, ProgressNode, ProgressResult,
@@ -81,6 +81,7 @@ struct Parsed {
     node: Option<String>,
     request_id: Option<String>,
     links: Vec<String>,
+    format: Option<String>,
 }
 
 fn parse(argv: &[String]) -> Result<Parsed, ProgressError> {
@@ -119,6 +120,7 @@ fn parse(argv: &[String]) -> Result<Parsed, ProgressError> {
             "--from" => out.from = Some(take()?),
             "--node" => out.node = Some(take()?),
             "--request-id" => out.request_id = Some(take()?),
+            "--format" => out.format = Some(take()?),
             n if n.starts_with('-') && n != "-" => {
                 return Err(usage(format!("unknown option {n}")));
             }
@@ -163,6 +165,7 @@ struct StatusJson<'a> {
     notes: &'a [RunNote],
     #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<&'a RunNote>,
+    history: &'a [HistoryEntry],
 }
 
 fn status_json(s: &ProgressSnapshot) -> StatusJson<'_> {
@@ -174,6 +177,7 @@ fn status_json(s: &ProgressSnapshot) -> StatusJson<'_> {
         taken: &s.taken,
         notes: &s.notes,
         message: s.message.as_ref(),
+        history: &s.history,
     }
 }
 
@@ -448,10 +452,30 @@ fn run_verb(
         }
         "status" => {
             if p.words.len() > 1 {
-                return Err(usage("usage: fm status [--json]"));
+                return Err(usage("usage: fm status [--json | --format text|markdown]"));
             }
+            let markdown = match p.format.as_deref() {
+                None | Some("text") => false,
+                Some("markdown") if !p.json => true,
+                Some("markdown") => {
+                    return Err(usage(
+                        "--json and --format markdown are two answers; pick one",
+                    ));
+                }
+                Some(other) => {
+                    return Err(usage(format!(
+                        "--format must be text or markdown, not {other}"
+                    )));
+                }
+            };
             let s = progress_status(paths, run_id)?;
-            let human = status_lines(&s).join("\n");
+            let human = if markdown {
+                crate::markdown::status_markdown(&s, now)
+                    .trim_end()
+                    .to_string()
+            } else {
+                status_lines(&s).join("\n")
+            };
             Ok(Done::Status(Box::new(s), human))
         }
         other => Err(usage(format!(

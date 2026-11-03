@@ -205,6 +205,7 @@ fn record(r: Rec<'_>) -> RunRecord {
         message: None,
         count: None,
         pid: None,
+        history: Vec::new(),
     }
 }
 
@@ -810,6 +811,7 @@ impl FakeHost {
                     vec![link("event", "https://calendar.example.com/e/5521")],
                 )],
                 message: None,
+                history: Vec::new(),
             }),
         }
     }

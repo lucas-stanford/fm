@@ -55,6 +55,7 @@ mod tests {
             taken: vec![("a".into(), "b".into())],
             notes: vec![],
             message: None,
+            history: Vec::new(),
         };
         let json = serde_json::to_string(&ChartState::of(Some(&p))).unwrap();
         assert_eq!(json, r#"{"nodes":{"a":"done"},"taken":[["a","b"]]}"#);

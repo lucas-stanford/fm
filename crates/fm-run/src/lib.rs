@@ -9,6 +9,7 @@ pub mod context;
 pub mod fire;
 pub mod guide;
 pub mod live;
+pub mod markdown;
 pub mod process;
 pub mod progress_cli;
 pub mod stop;

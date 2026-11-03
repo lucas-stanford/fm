@@ -2,6 +2,7 @@
 //! rail when merman's text layout cannot route it.
 
 pub mod decorate;
+pub mod markdown;
 pub mod rail;
 pub mod svg;
 pub mod text;
