@@ -23,7 +23,7 @@ Before you rely on one of these in an automation you share, check that every hos
 
 | Host | Agent | Pages |
 |---|---|---|
-| fm, the reference host: a command line and terminal UI | pi, GitHub Copilot CLI, Claude Code, Codex CLI, Gemini CLI or OpenCode | [fm](https://github.com/lucas-stanford/fm) |
+| fm, the reference host: a command line and terminal UI | GitHub Copilot CLI, Claude Code, Codex CLI, Gemini CLI, OpenCode and more | [fm](https://github.com/lucas-stanford/fm) |
 | pi-automations, an extension for pi that runs on fm | [pi](https://pi.dev) | [pi-automations example](pi-automations.md) |
 
 fm implements every page of this site, including the optional [flowcharts](flowcharts.md) and [`nodes`](flowcharts.md#nodes-field), and its tests check every example here against it. `fm validate <AUTOMATION.md>` checks a file the same way.

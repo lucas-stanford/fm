@@ -66,7 +66,7 @@ A host, the program that implements the format, takes every automation through t
 
 ## Where can I use Agent Automations?
 
-An `AUTOMATION.md` does nothing on its own: a host has to discover it, keep the schedule and run it. [aat](aat.md), in this repository, is a terminal host that runs automations through agent CLIs such as GitHub Copilot CLI, Claude Code and Codex CLI. The [Hosts](hosts.md) page lists the known hosts and what a host may add, and [Adding automations support](adding-support.md) explains how to implement the format in another agent.
+An `AUTOMATION.md` does nothing on its own: a host has to discover it, keep the schedule and run it. [fm](https://github.com/lucas-stanford/fm), the reference host, runs automations through agent CLIs such as GitHub Copilot CLI, Claude Code and Codex CLI. The [Hosts](hosts.md) page lists the known hosts and what a host may add, and [Adding automations support](adding-support.md) explains how to implement the format in another agent.
 
 ## Format version
 

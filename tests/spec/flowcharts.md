@@ -224,8 +224,8 @@ Read the change. List anything wrong with it, or say it is fine.
 - `nodes` needs `flow: strict`: a node runs its own section of the body.
 - Each key is a step on the chart: not a hook (`pre0`…, `post0`…), not `body`, not a `subgraph`.
 - Each value is an agent's name, or a mapping with `agent`, `model` and `timeout`, and at least one
-  of `agent` and `model`. `agent` is the name of an agent CLI the host can run, such as `pi`,
-  `copilot`, `claude`, `codex`, `gemini` or `opencode`; absent means the body's own. `model` has the
+  of `agent` and `model`. `agent` is the name of an agent CLI the host can run, such as
+  `claude`, `codex`, `copilot`, `gemini` or `opencode`; absent means the body's own. `model` has the
   form and rules of the [`model` field](specification.md#model-field), resolved by that agent and
   never substituted. `timeout` bounds the step, within what is left of the run's `timeout`.
 - A host that does not implement this field **must** refuse an automation that has it, like any
