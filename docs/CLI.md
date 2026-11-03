@@ -66,8 +66,8 @@ the file and its body, every field, the flowchart for `flow: strict`, and `nodes
 the checks that need this machine (scripts runnable, the agent and model, the host's maximum
 timeout); `fm check` does. `name` is checked against the file's folder, or `--name`. It prints
 `<name>: valid` and exits 0, or prints the first refusal (`<field>: <what is wrong> — <what fixes
-it>`) on stderr and exits 2. `--json` prints `{"ok": true, "name": …}` or `{"ok": false, "error":
-…}` on stdout instead.
+it>`) on stderr and exits 2. `--json` prints `{"ok": true, "name": …, "automation": …}`, the file as fm
+read it, or `{"ok": false, "error": …}` on stdout instead.
 
 ### `fm list`
 

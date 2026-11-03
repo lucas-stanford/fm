@@ -23,7 +23,9 @@ Before you rely on one of these in an automation you share, check that every hos
 
 | Host | Agent | Pages |
 |---|---|---|
-| aat, a terminal host in this repository | [Supported agent CLIs](aat-agents.md) | [aat](aat.md) |
-| pi-automations, an example extension | [pi](https://pi.dev) | [pi-automations example](pi-automations.md) |
+| fm, the reference host: a command line and terminal UI | pi, GitHub Copilot CLI, Claude Code, Codex CLI, Gemini CLI or OpenCode | [fm](https://github.com/lucas-stanford/fm) |
+| pi-automations, an extension for pi that runs on fm | [pi](https://pi.dev) | [pi-automations example](pi-automations.md) |
+
+fm implements every page of this site, including the optional [flowcharts](flowcharts.md) and [`nodes`](flowcharts.md#nodes-field), and its tests check every example here against it. `fm validate <AUTOMATION.md>` checks a file the same way.
 
 If you are adding the format to an agent, start with [Adding automations support](adding-support.md).

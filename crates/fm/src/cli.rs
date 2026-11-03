@@ -80,7 +80,7 @@ pub enum Cmd {
         /// The folder name to check `name` against, when it is not the file's folder
         #[arg(long)]
         name: Option<String>,
-        /// The answer as one JSON object: {"ok": true, "name": …} or {"ok": false, "error": …}
+        /// The answer as one JSON object: {"ok": true, "name": …, "automation": …} or {"ok": false, "error": …}
         #[arg(long)]
         json: bool,
     },
@@ -318,16 +318,19 @@ fn validate(path: &std::path::Path, name: Option<&str>, json: bool) -> i32 {
         .map_err(|e| format!("{}: {e}", file.display()))
         .and_then(|text| {
             fm_spec::parse_automation(&text, &dir_name)
-                .map(|(a, _)| a.name)
+                .map(|(a, _)| a)
                 .map_err(|r| r.to_string())
         });
     match (answer, json) {
-        (Ok(name), true) => {
-            out!("{}", serde_json::json!({"ok": true, "name": name}));
+        (Ok(a), true) => {
+            out!(
+                "{}",
+                serde_json::json!({"ok": true, "name": a.name, "automation": a})
+            );
             EXIT_OK
         }
-        (Ok(name), false) => {
-            out!("{name}: valid");
+        (Ok(a), false) => {
+            out!("{}: valid", a.name);
             EXIT_OK
         }
         (Err(e), true) => {

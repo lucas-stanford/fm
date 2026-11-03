@@ -303,6 +303,10 @@ fn validate_checks_one_file_as_the_specification_says() {
         ok(&fm(&["validate", &folder_arg], None)).trim(),
         "demo: valid"
     );
+    let v: serde_json::Value =
+        serde_json::from_str(&ok(&fm(&["validate", &folder_arg, "--json"], None))).unwrap();
+    assert_eq!(v["ok"], true);
+    assert_eq!(v["automation"]["on"]["manual"], true);
 
     std::fs::write(
         &file,
