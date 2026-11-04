@@ -188,6 +188,40 @@ struct Section {
     text: String,
 }
 
+/// One step's section of a strict body: `## <label> {#<id>}` and what follows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StepSection {
+    pub id: String,
+    /// The heading text before `{#id}`.
+    pub label: String,
+    /// The heading line and everything up to the next `##` heading.
+    pub text: String,
+}
+
+/// A body cut at its `##` headings: the text before the first one (the title, the introduction and
+/// the chart), and each step's section. Headings inside code fences are text.
+pub fn step_sections(body: &str) -> (String, Vec<StepSection>) {
+    let Scan {
+        lines, headings, ..
+    } = scan(body);
+    let tops: Vec<&Heading> = headings.iter().filter(|h| h.level == 2).collect();
+    let first = tops.first().map_or(lines.len(), |h| h.index);
+    let intro = lines[..first].join("\n").trim().to_string();
+    let mut out = Vec::new();
+    for (k, h) in tops.iter().enumerate() {
+        let Some(c) = BOUND.captures(&h.text).ok().flatten() else {
+            continue;
+        };
+        let end = tops.get(k + 1).map_or(lines.len(), |n| n.index);
+        out.push(StepSection {
+            id: c.get(2).map_or("", |m| m.as_str()).to_string(),
+            label: c.get(1).map_or("", |m| m.as_str()).to_string(),
+            text: lines[h.index..end].join("\n").trim().to_string(),
+        });
+    }
+    (intro, out)
+}
+
 /// Check a strict body against its flowchart. `first_line` is the file line the body starts on,
 /// so problems point into the file. Every problem, by line, chart-wide ones last.
 pub fn check_strict_flow(body: &str, first_line: usize) -> Vec<FlowProblem> {
@@ -856,5 +890,28 @@ flowchart TD
             ))
             .is_empty()
         );
+    }
+}
+
+#[cfg(test)]
+mod step_section_tests {
+    use super::*;
+
+    #[test]
+    fn cuts_the_body_at_its_step_headings() {
+        let body = "# Fix it\n\nThe input is below.\n\n```mermaid\nflowchart TD\n  read --> fix\n```\n\n## Read the failure {#read}\n\nFind it.\n\n```text\n## not a heading {#nope}\n```\n\n### Detail\n\nMore.\n\n## Fix it {#fix}\n\nFix it.\n";
+        let (intro, sections) = step_sections(body);
+        assert!(
+            intro.starts_with("# Fix it") && intro.ends_with("```"),
+            "{intro}"
+        );
+        let ids: Vec<&str> = sections.iter().map(|s| s.id.as_str()).collect();
+        assert_eq!(ids, ["read", "fix"]);
+        assert_eq!(sections[0].label, "Read the failure");
+        assert!(sections[0].text.starts_with("## Read the failure {#read}"));
+        // A heading in a fence and a ### stay inside the section.
+        assert!(sections[0].text.contains("## not a heading {#nope}"));
+        assert!(sections[0].text.ends_with("More."));
+        assert_eq!(sections[1].text, "## Fix it {#fix}\n\nFix it.");
     }
 }

@@ -14,7 +14,7 @@ The format fixes what an automation means. A host chooses how people work with i
 - Its defaults and limits: the default and maximum `timeout`, the hook timeout, the grace period for a late tick, and whether consent expires.
 - More folders: a host **may** also scan folders of its own, beside `.agents/automations/`.
 - Optional triggers: a host **may** leave `on.watch` out. It then refuses an automation that uses it, by name, and never runs the rest.
-- Reporting: progress on the flowchart, notes of what a run published, and one message for the reader. Draft 0.1.0 does not define these. A host that has them can tell the agent how to use them at run time, so a body can ask for them in plain words.
+- Reporting: progress on the flowchart, notes of what a run published, and one message for the reader. Draft 0.2.0 does not define these. A host that has them can tell the agent how to use them at run time, so a body can ask for them in plain words.
 - Plugins: ways to observe runs, add actions or draw flowcharts. Each host defines its own.
 
 Before you rely on one of these in an automation you share, check that every host your team uses has it.
@@ -23,7 +23,9 @@ Before you rely on one of these in an automation you share, check that every hos
 
 | Host | Agent | Pages |
 |---|---|---|
-| aat, a terminal host in this repository | [Supported agent CLIs](aat-agents.md) | [aat](aat.md) |
-| pi-automations, an example extension | [pi](https://pi.dev) | [pi-automations example](pi-automations.md) |
+| fm, the reference host: a command line and terminal UI | GitHub Copilot CLI, Claude Code, Codex CLI, Gemini CLI, OpenCode and more | [fm](https://github.com/lucas-stanford/fm) |
+| pi-automations, an extension for pi that runs on fm | [pi](https://pi.dev) | [pi-automations example](pi-automations.md) |
+
+fm implements every page of this site, including the optional [flowcharts](flowcharts.md) and [`nodes`](flowcharts.md#nodes-field), and its tests check every example here against it. `fm validate <AUTOMATION.md>` checks a file the same way.
 
 If you are adding the format to an agent, start with [Adding automations support](adding-support.md).

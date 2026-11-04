@@ -294,9 +294,13 @@ fn a_stop_file_stops_the_tree_within_the_poll_interval() {
         }
     });
     assert!(matches!(o, ProcessOutcome::Stopped { .. }), "{o:?}");
-    // A poll, then the kill (Unix: SIGTERM is enough for sh and sleep).
+    // A poll, then the kill (Unix: SIGTERM is enough for sh and sleep), then at most DRAIN while
+    // the killed tree's pipes close: under a loaded test run that can take most of it.
     let took = stopped_at.expect("the stop file was written").elapsed();
-    assert!(took < spec.poll + Duration::from_secs(2), "{took:?}");
+    assert!(
+        took < spec.poll + DRAIN + Duration::from_secs(1),
+        "{took:?}"
+    );
     assert!(gone_within(pids[0], Duration::from_secs(5)));
 }
 

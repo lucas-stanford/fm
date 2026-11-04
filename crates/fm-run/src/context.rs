@@ -216,6 +216,7 @@ mod tests {
                 hooks: Hooks::default(),
                 flow: Flow::Loose,
                 body: "# Daily briefing\n\nRead the counts above.".into(),
+                nodes: Vec::new(),
             },
             dir: PathBuf::from("d"),
             file: PathBuf::from("d").join("AUTOMATION.md"),

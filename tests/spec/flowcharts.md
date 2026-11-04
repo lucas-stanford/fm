@@ -179,3 +179,132 @@ Follow the steps.
 
 Still reproduces, fixed, or cannot tell.
 ~~~~
+
+## `nodes` field
+
+A step can run through its own agent CLI or model: a stronger model for the hard step, another
+vendor's agent to review the first one's work. `nodes` maps a step's id to the agent that runs it.
+
+````markdown automation title=".agents/automations/fix-and-review/AUTOMATION.md"
+---
+name: fix-and-review
+description: Fix the failing test, then have a second agent review the fix.
+flow: strict
+nodes:
+  fix:
+    agent: claude
+    model: anthropic/claude-opus-4-5:high
+    timeout: 90m
+  review: codex
+on:
+  manual: true
+---
+
+# Fix the failing test, then review it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+  fix --> review["Review the fix"]
+```
+
+## Read the failure {#read}
+
+Run the tests and find the first failure.
+
+## Fix it {#fix}
+
+Fix the code so the test passes, and change nothing else.
+
+## Review the fix {#review}
+
+Read the change. List anything wrong with it, or say it is fine.
+````
+
+- `nodes` needs `flow: strict`: a node runs its own section of the body.
+- Each key is a step on the chart: not a hook (`pre0`…, `post0`…), not `body`, not a `subgraph`.
+- Each value is an agent's name, or a mapping with `agent`, `model` and `timeout`, and at least one
+  of `agent` and `model`. `agent` is the name of an agent CLI the host can run, such as
+  `claude`, `codex`, `copilot`, `gemini` or `opencode`; absent means the body's own. `model` has the
+  form and rules of the [`model` field](specification.md#model-field), resolved by that agent and
+  never substituted. `timeout` bounds the step, within what is left of the run's `timeout`.
+- A host that does not implement this field **must** refuse an automation that has it, like any
+  unknown field. A host that implements it **must** refuse, on that machine, a node whose agent it
+  cannot run or whose model that agent cannot serve, and **must** show each node's agent and model in
+  its consent preview.
+
+### Running a node
+
+The body runs as it always does. When it reaches a step listed in `nodes`, it hands that step over:
+the host runs the step's section as its own turn, through the node's agent and model, with the same
+input block the body got and whatever the body passes along, and gives the body the answer. The body
+then moves on as the chart says. Only the body moves the run along the chart; a node's agent reports
+on its own step and answers.
+
+A host tells the body how to hand a step over at run time, as it tells it how to report. In fm it is
+`fm node <id> -m "<what the step needs to know>"`, which prints the node's answer.
+
+```yaml frontmatter invalid="nodes: needs flow: strict — a node runs its own section of the body, so every step needs one"
+name: loose-nodes
+description: Nodes without a strict chart.
+on:
+  manual: true
+nodes:
+  fix: claude
+```
+
+~~~~markdown automation dir=fix-and-review invalid="nodes.body: is a hook or the body, not a step — the steps are read, fix"
+---
+name: fix-and-review
+description: Fix the failing test.
+flow: strict
+nodes:
+  body: claude
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=fix-and-review invalid="nodes.fix.budget: unknown key — a node has agent, model, timeout"
+---
+name: fix-and-review
+description: Fix the failing test.
+flow: strict
+nodes:
+  fix:
+    agent: claude
+    budget: 5
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~

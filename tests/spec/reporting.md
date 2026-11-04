@@ -9,7 +9,7 @@ order: 3
 A run's record says how it ended. Progress and notes say what happened on the way: which step it is on, which way it went at a branch, and what it published, with links. The message is the one thing it says to you at the end.
 
 > [!NOTE]
-> Draft 0.1.0 does not define progress reporting. This page describes pi-automations, where it is built in. A body can ask for receipts in plain words, as in [Ask for receipts](best-practices.md#ask-for-receipts): the block the host adds to every prompt tells the agent which commands those words mean. If a body names `pa`, write "If `pa` fails, carry on" too, so the same automation still works on a host without it.
+> Draft 0.2.0 does not define progress reporting. This page describes pi-automations, where it is built in. A body can ask for receipts in plain words, as in [Ask for receipts](best-practices.md#ask-for-receipts): the block the host adds to every prompt tells the agent which commands those words mean. If a body names `pa`, write "If `pa` fails, carry on" too, so the same automation still works on a host without it.
 
 ## What a person sees
 

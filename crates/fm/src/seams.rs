@@ -219,6 +219,164 @@ pub fn progress(argv: &[String]) -> i32 {
     out.code
 }
 
+/// `fm node <id> [-m <text> | --file <path>] [--cwd <dir>] [--run <id>] [--json]`: run one step of
+/// the run through its node's agent and print the answer. 0 answered, 2 refused, 20 the agent did
+/// not answer, 30 stopped or out of time.
+pub fn node(env: &HostEnv, argv: &[String]) -> i32 {
+    const USAGE: &str =
+        "usage: fm node <id> [-m <text> | --file <path>] [--cwd <dir>] [--run <id>] [--json]";
+    let mut id = None;
+    let (mut message, mut file, mut cwd, mut run, mut json) = (None, None, None, None, false);
+    let mut i = 0;
+    while i < argv.len() {
+        let a = &argv[i];
+        let (name, inline) = match a.split_once('=') {
+            Some((n, v)) if n.starts_with("--") => (n, Some(v.to_string())),
+            _ => (a.as_str(), None),
+        };
+        let mut value = || {
+            inline.clone().or_else(|| {
+                i += 1;
+                argv.get(i).cloned()
+            })
+        };
+        let slot = match name {
+            "-m" | "--message" => &mut message,
+            "--file" => &mut file,
+            "--cwd" => &mut cwd,
+            "--run" => &mut run,
+            "--json" => {
+                json = true;
+                i += 1;
+                continue;
+            }
+            n if n.starts_with('-') => {
+                eprintln!("fm node: unknown option {n}\n{USAGE}");
+                return 1;
+            }
+            _ if id.is_none() => {
+                id = Some(a.clone());
+                i += 1;
+                continue;
+            }
+            _ => {
+                eprintln!("fm node: one step at a time\n{USAGE}");
+                return 1;
+            }
+        };
+        match value() {
+            Some(v) => *slot = Some(v),
+            None => {
+                eprintln!("fm node: {name} needs a value\n{USAGE}");
+                return 1;
+            }
+        }
+        i += 1;
+    }
+    let Some(id) = id else {
+        eprintln!("fm node: which step?\n{USAGE}");
+        return 1;
+    };
+    if message.is_some() && file.is_some() {
+        eprintln!("fm node: -m and --file are two handoffs; pick one\n{USAGE}");
+        return 1;
+    }
+    let handoff = match file {
+        Some(f) => match std::fs::read_to_string(&f) {
+            Ok(t) => Some(t),
+            Err(e) => {
+                eprintln!("fm node: cannot read {f}: {e}");
+                return 1;
+            }
+        },
+        None => message,
+    };
+    let refuse = |m: String| {
+        eprintln!("fm node: {m}");
+        EXIT_REFUSED
+    };
+    let Some(run_id) = run.or_else(|| {
+        std::env::var("AUTOMATION_RUN")
+            .ok()
+            .filter(|s| !s.is_empty())
+    }) else {
+        return refuse("not inside a run — AUTOMATION_RUN is not set (or pass --run <id>)".into());
+    };
+    let paths = std::env::var("AUTOMATION_STATE_DIR")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map_or_else(
+            || env.state.clone(),
+            |d| fm_model::StatePaths::new(d.trim()),
+        );
+    let snap = match fm_state::progress_status(&paths, Some(&run_id)) {
+        Ok(s) => s,
+        Err(e) => return refuse(e.message),
+    };
+    let found = discover(
+        &RealHost::new(env.clone()).roots(),
+        &DiscoverContext::default(),
+    );
+    let l: Located = match by_key(&found, &snap.key) {
+        Some(Discovered::Valid(l)) => l.as_ref().clone(),
+        Some(Discovered::Invalid { error, .. }) => {
+            return refuse(format!("{}: {error}", snap.name));
+        }
+        None => {
+            return refuse(format!(
+                "{}: its AUTOMATION.md is not found here",
+                snap.name
+            ));
+        }
+    };
+    let config = match load_config(&env.state) {
+        Ok(c) => c,
+        Err(e) => return refuse(e.to_string()),
+    };
+    let deps = fm_run::node::NodeDeps {
+        paths: &paths,
+        config: &config,
+        located: &l,
+        path_env: fm_run::fire::path_overlay(Some(&env.exe)),
+        poll: std::time::Duration::from_millis(100),
+    };
+    let req = fm_run::node::NodeRequest {
+        id,
+        handoff,
+        cwd: cwd.map(std::path::PathBuf::from),
+    };
+    match fm_run::node::run_node(&deps, &run_id, &req, Utc::now) {
+        Ok(a) => {
+            if json {
+                let v = serde_json::json!({"ok": true, "data": {
+                    "answer": a.answer, "agent": a.agent, "model": a.model,
+                    "transcript": a.transcript.to_string_lossy(),
+                }});
+                println!("{v}");
+            } else {
+                println!("{}", a.answer.trim_end());
+            }
+            0
+        }
+        Err(e) => {
+            let (code, kind) = match &e {
+                fm_run::node::NodeError::Refused(_) => (EXIT_REFUSED, "REFUSED"),
+                fm_run::node::NodeError::Failed(_) => (20, "FAILED"),
+                fm_run::node::NodeError::Stopped(_) => (30, "STOPPED"),
+            };
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({"ok": false, "error": {"code": kind, "message": e.to_string()}})
+                );
+            } else {
+                eprintln!("fm node: {e}");
+            }
+            code
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

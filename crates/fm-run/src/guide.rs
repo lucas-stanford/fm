@@ -56,6 +56,26 @@ pub fn progress_guide(chart: &str, strict: bool) -> String {
     lines.join("\n")
 }
 
+/// For an automation with `nodes:`: which steps run through their own agent, and how to hand one
+/// over. `None` when it has none.
+pub fn nodes_guide(config: &fm_model::Config, l: &fm_model::Located) -> Option<String> {
+    if l.automation.nodes.is_empty() {
+        return None;
+    }
+    let mut lines = vec![
+        "<nodes>".to_string(),
+        "These steps run through their own agent. When the run reaches one, start it with `fm next` as usual, then hand it over: `fm node <id> -m \"what it needs from you\"` (paths, findings, what to do; add `--cwd <folder>` to run it in another folder). It waits, then prints the step's answer. Go on from that answer as the chart says. If `fm node` fails, say so with `fm say` and do what the step's section says for a failure.".to_string(),
+    ];
+    for n in &l.automation.nodes {
+        lines.push(match crate::node::plan_node(config, l, n) {
+            Ok(p) => format!("- {}: {} ({})", n.id, p.cli, p.model.display),
+            Err(e) => format!("- {}: cannot run here — {e}", n.id),
+        });
+    }
+    lines.push("</nodes>".to_string());
+    Some(lines.join("\n"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,5 +124,32 @@ mod tests {
         assert!(g.contains("`fm note "));
         assert!(g.contains("`fm message "));
         assert!(!g.contains("<progress>"));
+    }
+
+    #[test]
+    fn nodes_are_listed_with_their_agent_and_how_to_hand_one_over() {
+        let text = "---\nname: demo\ndescription: d\nflow: strict\nnodes:\n  review: codex\non:\n  manual: true\n---\n\n```mermaid\nflowchart TD\n  build[\"Build\"] --> review[\"Review\"]\n```\n\n## Build {#build}\n\nB.\n\n## Review {#review}\n\nR.\n";
+        let (automation, _) = fm_spec::parse_automation(text, "demo").unwrap();
+        let l = fm_model::Located {
+            automation,
+            dir: "/a/demo".into(),
+            file: "/a/demo/AUTOMATION.md".into(),
+            root: fm_model::Root {
+                path: "/a".into(),
+                scope: fm_model::Scope::User,
+            },
+            repo_root: None,
+            key: "user:/a:demo".into(),
+        };
+        let g = nodes_guide(&fm_model::Config::default(), &l).unwrap();
+        assert!(
+            g.starts_with("<nodes>\n") && g.ends_with("\n</nodes>"),
+            "{g}"
+        );
+        assert!(g.contains("`fm node <id> -m"), "{g}");
+        assert!(g.contains("- review: codex (codex default)"), "{g}");
+        let mut plain = l.clone();
+        plain.automation.nodes.clear();
+        assert!(nodes_guide(&fm_model::Config::default(), &plain).is_none());
     }
 }

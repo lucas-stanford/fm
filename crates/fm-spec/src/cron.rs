@@ -1,4 +1,4 @@
-//! Cron: the Draft 0.1.0 grammar is checked here, because cron libraries accept more (`@daily`, `L`,
+//! Cron: the Draft 0.2.0 grammar is checked here, because cron libraries accept more (`@daily`, `L`,
 //! `#`, six fields). `croner` then does only the date arithmetic, daylight saving included: a fixed
 //! time in a spring-forward gap fires once just after it, and once on a fall-back day.
 
@@ -56,7 +56,7 @@ fn describe_bad_value(token: &str, field: usize) -> String {
             .find(|c| matches!(c.to_ascii_uppercase(), 'L' | 'W' | 'H' | '#' | '?'))
     {
         return format!(
-            "{} uses \"{c}\", which Draft 0.1.0 does not define — use *, a value, a range, a list or a step",
+            "{} uses \"{c}\", which Draft 0.2.0 does not define — use *, a value, a range, a list or a step",
             quote(token)
         );
     }
@@ -146,7 +146,7 @@ fn validate_field(text: &str, field: usize) -> Option<String> {
     None
 }
 
-/// Check a cron against the Draft 0.1.0 grammar. `Err` is the message after `on.schedule.cron: `.
+/// Check a cron against the Draft 0.2.0 grammar. `Err` is the message after `on.schedule.cron: `.
 pub fn validate_cron(expr: &str) -> Result<(), String> {
     let trimmed = expr.trim();
     if trimmed.is_empty() {
@@ -155,7 +155,7 @@ pub fn validate_cron(expr: &str) -> Result<(), String> {
     // Nicknames are another notation altogether, so say so rather than counting fields.
     if trimmed.starts_with('@') {
         return Err(format!(
-            "{} is a nickname — Draft 0.1.0 takes 5 cron fields, so write \"0 0 * * *\"",
+            "{} is a nickname — Draft 0.2.0 takes 5 cron fields, so write \"0 0 * * *\"",
             quote(expr)
         ));
     }
@@ -231,7 +231,7 @@ fn search<Z: TimeZone>(
 }
 
 impl CronSchedule {
-    /// Validate `expr` (Draft 0.1.0 grammar) and `timezone` (`None` = local), then compile.
+    /// Validate `expr` (Draft 0.2.0 grammar) and `timezone` (`None` = local), then compile.
     pub fn new(expr: &str, timezone: Option<&str>) -> Result<CronSchedule, String> {
         validate_cron(expr)?;
         let zone = Zone::from_name(timezone)?;
@@ -547,7 +547,7 @@ mod tests {
             assert!(
                 validate_cron(e)
                     .unwrap_err()
-                    .contains("Draft 0.1.0 does not define"),
+                    .contains("Draft 0.2.0 does not define"),
                 "{e}"
             );
         }

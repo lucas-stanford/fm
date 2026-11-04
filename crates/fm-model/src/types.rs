@@ -101,8 +101,27 @@ pub struct Automation {
     pub on: Triggers,
     pub hooks: Hooks,
     pub flow: Flow,
+    /// Steps handed to their own agent CLI (`nodes:`), in the order the file lists them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub nodes: Vec<NodeAgent>,
     /// The Markdown body, frontmatter removed.
     pub body: String,
+}
+
+/// One step that runs through its own agent CLI and model: an entry of `nodes:`. The body hands
+/// the step over when it reaches it, and goes on with the answer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodeAgent {
+    /// A step on the flowchart.
+    pub id: String,
+    /// The agent CLI's name (`claude`, `codex`, …); absent means the body's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<ModelSpec>,
+    /// Raw duration string, as written; bounded by what is left of the run's timeout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<String>,
 }
 
 /// An automation and where it was found.

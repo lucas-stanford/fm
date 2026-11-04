@@ -8,7 +8,7 @@ specification ([agent-automations](https://github.com/lucas-stanford/agent-autom
 |---|---|
 | `specification.md` | The format, validation order, consent, runs, records |
 | `adding-support.md` | What a host must, should and may do, step by step |
-| `validation.md` | Every refusal message, each with a file that produces it (55) |
+| `validation.md` | Every refusal message, each with a file that produces it (66) |
 | `watch-scripts.md` | The `on.watch` contract |
 | `flowcharts.md` | Charts and strict flow |
 

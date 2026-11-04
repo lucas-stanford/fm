@@ -40,7 +40,7 @@ on:
 
 Frontmatter that is empty, or not a mapping:
 
-```markdown automation dir=empty-frontmatter invalid="frontmatter: is empty — Draft 0.1.0 needs at least name, description and on"
+```markdown automation dir=empty-frontmatter invalid="frontmatter: is empty — Draft 0.2.0 needs at least name, description and on"
 ---
 ---
 
@@ -70,7 +70,7 @@ on:
 
 Every unknown field is named, in one line:
 
-```yaml frontmatter invalid="budget, schedule: unknown fields — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"
+```yaml frontmatter invalid="budget, schedule: unknown fields — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"
 name: nightly-report
 description: Post the nightly report.
 schedule: "0 2 * * *"
@@ -79,7 +79,7 @@ on:
   manual: true
 ```
 
-```yaml frontmatter invalid="tags: unknown field — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"
+```yaml frontmatter invalid="tags: unknown field — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"
 name: tagged-report
 description: Post the tagged report.
 tags: [reports]
@@ -261,7 +261,7 @@ on:
 
 ### `cron`
 
-```yaml frontmatter invalid="on.schedule.cron: \"@daily\" is a nickname — Draft 0.1.0 takes 5 cron fields, so write \"0 0 * * *\""
+```yaml frontmatter invalid="on.schedule.cron: \"@daily\" is a nickname — Draft 0.2.0 takes 5 cron fields, so write \"0 0 * * *\""
 name: nightly-digest
 description: A nightly digest.
 on:
@@ -275,7 +275,7 @@ on:
   schedule: "0 0 7 * * MON-FRI"
 ```
 
-```yaml frontmatter invalid="on.schedule.cron: \"0 9 L * *\" is not a valid cron expression — day-of-month \"L\" uses \"L\", which Draft 0.1.0 does not define — use *, a value, a range, a list or a step"
+```yaml frontmatter invalid="on.schedule.cron: \"0 9 L * *\" is not a valid cron expression — day-of-month \"L\" uses \"L\", which Draft 0.2.0 does not define — use *, a value, a range, a list or a step"
 name: month-end-report
 description: Report on the last day of the month.
 on:
@@ -497,3 +497,274 @@ on:
 
 Read the issue, then write a verdict.
 ~~~
+
+## `nodes`
+
+`nodes` is checked after `flow`, and only once the file is otherwise valid. The steps a message lists are the chart's, in order. See [The `nodes` field](flowcharts.md#nodes-field).
+
+```yaml frontmatter invalid="nodes: must be a mapping from a step id to its agent — for example build: claude"
+name: nodes-list
+description: Lists agents instead of mapping steps to them.
+nodes: claude
+on:
+  manual: true
+```
+
+```yaml frontmatter invalid="nodes: needs flow: strict — a node runs its own section of the body, so every step needs one"
+name: nodes-loose
+description: Hands a step to an agent without a strict chart.
+nodes:
+  fix: claude
+on:
+  manual: true
+```
+
+~~~~markdown automation dir=nodes-unknown-step invalid="nodes.ship: is not a step on the flowchart — the steps are read, fix"
+---
+name: nodes-unknown-step
+description: Names a step the chart does not have.
+flow: strict
+nodes:
+  ship: claude
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-hook invalid="nodes.pre0: is a hook or the body, not a step — the steps are read, fix"
+---
+name: nodes-hook
+description: Hands a hook to an agent.
+flow: strict
+nodes:
+  pre0: claude
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-number invalid="nodes.fix: 3 is not an agent name or a mapping with agent, model, timeout"
+---
+name: nodes-number
+description: Gives a step a number.
+flow: strict
+nodes:
+  fix: 3
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-bad-name invalid="nodes.fix: \"Claude Code\" is not an agent name — for example claude or codex"
+---
+name: nodes-bad-name
+description: Names an agent the way a person would.
+flow: strict
+nodes:
+  fix: Claude Code
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-unknown-key invalid="nodes.fix.budget: unknown key — a node has agent, model, timeout"
+---
+name: nodes-unknown-key
+description: Gives a step a budget.
+flow: strict
+nodes:
+  fix:
+    agent: claude
+    budget: 5
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-bad-agent invalid="nodes.fix.agent: [\"claude\"] is not an agent name — for example claude or codex"
+---
+name: nodes-bad-agent
+description: Lists agents for one step.
+flow: strict
+nodes:
+  fix:
+    agent: [claude]
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-bad-model invalid="nodes.fix.model: \"opus\" is not <provider>/<id>[:<thinking>] — for example anthropic/claude-sonnet-4-5:low"
+---
+name: nodes-bad-model
+description: Names a model without its provider.
+flow: strict
+nodes:
+  fix:
+    model: opus
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-bad-timeout invalid="nodes.fix.timeout: \"1h30m\" is not a duration — use 90s, 10m, 1h"
+---
+name: nodes-bad-timeout
+description: Gives a step a compound timeout.
+flow: strict
+nodes:
+  fix:
+    agent: claude
+    timeout: 1h30m
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~
+
+~~~~markdown automation dir=nodes-empty invalid="nodes.fix: names neither an agent nor a model — add agent: <cli> or model: <provider>/<id>"
+---
+name: nodes-empty
+description: Gives a step a timeout and nothing else.
+flow: strict
+nodes:
+  fix:
+    timeout: 10m
+on:
+  manual: true
+---
+
+# Fix it
+
+```mermaid
+flowchart TD
+  read["Read the failure"] --> fix["Fix it"]
+```
+
+## Read the failure {#read}
+
+Find the first failure.
+
+## Fix it {#fix}
+
+Fix it.
+~~~~

@@ -104,6 +104,7 @@ fn automation(name: &str, description: &str, on: Triggers) -> Automation {
         hooks: Hooks::default(),
         flow: Flow::Loose,
         body: format!("Do what {name} does."),
+        nodes: Vec::new(),
     }
 }
 
@@ -1075,6 +1076,7 @@ impl Host for FakeHost {
             files,
             warnings,
             expires: (s.scope == Scope::Repository).then(|| "in 30 days, on Nov 28".into()),
+            nodes: Vec::new(),
         })
     }
 

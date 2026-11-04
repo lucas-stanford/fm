@@ -1,10 +1,13 @@
-//! The `AUTOMATION.md` parser: YAML 1.2 frontmatter, eight fields, everything else refused by name,
+//! The `AUTOMATION.md` parser: YAML 1.2 frontmatter, nine fields, everything else refused by name,
 //! checked in the order the specification gives, first problem only (strict flow: all of them).
 
 use std::time::Duration;
 
-use fm_model::{Automation, CatchUp, Flow, Hook, Hooks, ModelSpec, Schedule, Triggers, Watch};
+use fm_model::{
+    Automation, CatchUp, Flow, Hook, Hooks, ModelSpec, NodeAgent, Schedule, Triggers, Watch,
+};
 
+use crate::chart::{is_reserved_node, parse_chart};
 use crate::cron::{is_iana_zone, validate_cron};
 use crate::duration::parse_duration;
 use crate::flow_block::find_flow_block;
@@ -13,7 +16,7 @@ use crate::strict_flow::{check_strict_flow, flow_problem_line};
 use crate::yaml::{Value, parse_yaml};
 
 /// The closed field list. Adding one is a specification change, not a feature.
-pub const FIELDS: [&str; 8] = [
+pub const FIELDS: [&str; 9] = [
     "name",
     "description",
     "enabled",
@@ -22,7 +25,12 @@ pub const FIELDS: [&str; 8] = [
     "on",
     "hooks",
     "flow",
+    "nodes",
 ];
+/// The draft of the specification this parser implements, as its refusals name it.
+pub const DRAFT: &str = "Draft 0.2.0";
+/// What one entry of `nodes:` may say.
+pub const NODE_KEYS: [&str; 3] = ["agent", "model", "timeout"];
 /// The triggers this host implements.
 pub const TRIGGERS: [&str; 3] = ["schedule", "manual", "watch"];
 pub const SCHEDULE_KEYS: [&str; 3] = ["cron", "timezone", "catch-up"];
@@ -204,7 +212,7 @@ fn parse_frontmatter_yaml(yaml: &str) -> Result<Vec<(String, Value)>, Refusal> {
     match value {
         Value::Null => Err(Refusal::new(
             "frontmatter",
-            "is empty — Draft 0.1.0 needs at least name, description and on",
+            "is empty — Draft 0.2.0 needs at least name, description and on",
         )),
         Value::Map(m) => Ok(m),
         _ => Err(Refusal::new(
@@ -579,7 +587,7 @@ pub fn parse_automation(
         };
         return Err(Refusal::new(
             unknown.join(", "),
-            format!("{label} — Draft 0.1.0 has {}", FIELDS.join(", ")),
+            format!("{label} — {DRAFT} has {}", FIELDS.join(", ")),
         ));
     }
 
@@ -638,6 +646,7 @@ pub fn parse_automation(
     }
 
     let chart = find_flow_block(&split.body).map(|b| b.text);
+    let nodes = parse_nodes(get(&front, "nodes"), flow, chart.as_deref())?;
     let automation = Automation {
         name,
         description,
@@ -647,9 +656,138 @@ pub fn parse_automation(
         on,
         hooks,
         flow,
+        nodes,
         body: body.to_string(),
     };
     Ok((automation, chart))
+}
+
+/// `nodes:`: steps of a strict chart that run through their own agent CLI or model.
+fn parse_nodes(
+    raw: Option<&Value>,
+    flow: Flow,
+    chart: Option<&str>,
+) -> Result<Vec<NodeAgent>, Refusal> {
+    let Some(raw) = raw else {
+        return Ok(Vec::new());
+    };
+    let Value::Map(map) = raw else {
+        return Err(Refusal::new(
+            "nodes",
+            "must be a mapping from a step id to its agent — for example build: claude",
+        ));
+    };
+    if flow != Flow::Strict {
+        return Err(Refusal::new(
+            "nodes",
+            "needs flow: strict — a node runs its own section of the body, so every step needs one",
+        ));
+    }
+    // `flow: strict` already guaranteed a chart whose steps each have a section.
+    let parsed = parse_chart(chart.unwrap_or_default());
+    let steps: Vec<&str> = parsed
+        .nodes
+        .iter()
+        .map(|n| n.id.as_str())
+        .filter(|id| !is_reserved_node(id) && !parsed.subgraphs.iter().any(|g| g == id))
+        .collect();
+    let mut out = Vec::new();
+    for (id, value) in map {
+        let at = format!("nodes.{id}");
+        if !steps.contains(&id.as_str()) {
+            let what = if is_reserved_node(id) {
+                "is a hook or the body, not a step"
+            } else {
+                "is not a step on the flowchart"
+            };
+            return Err(Refusal::new(
+                at,
+                format!("{what} — the steps are {}", steps.join(", ")),
+            ));
+        }
+        let mut node = NodeAgent {
+            id: id.clone(),
+            agent: None,
+            model: None,
+            timeout: None,
+        };
+        match value {
+            Value::Str(agent) => node.agent = Some(parse_agent_name(agent, &at)?),
+            Value::Map(entry) => {
+                if let Some(k) = sorted_unknown(entry, &NODE_KEYS).first() {
+                    return Err(Refusal::new(
+                        format!("{at}.{k}"),
+                        format!("unknown key — a node has {}", NODE_KEYS.join(", ")),
+                    ));
+                }
+                if let Some(v) = get(entry, "agent") {
+                    let Some(name) = v.as_str() else {
+                        return Err(Refusal::new(
+                            format!("{at}.agent"),
+                            format!("{v} is not an agent name — for example claude or codex"),
+                        ));
+                    };
+                    node.agent = Some(parse_agent_name(name, &format!("{at}.agent"))?);
+                }
+                if let Some(v) = get(entry, "model") {
+                    node.model = Some(v.as_str().and_then(parse_model_spec).ok_or_else(|| {
+                        Refusal::new(
+                            format!("{at}.model"),
+                            format!(
+                                "{v} is not <provider>/<id>[:<thinking>] — for example anthropic/claude-sonnet-4-5:low"
+                            ),
+                        )
+                    })?);
+                }
+                if let Some(v) = get(entry, "timeout") {
+                    match v {
+                        Value::Str(s) if parse_duration(s).is_some() => {
+                            node.timeout = Some(s.clone());
+                        }
+                        other => {
+                            return Err(Refusal::new(
+                                format!("{at}.timeout"),
+                                format!("{other} is not a duration — use 90s, 10m, 1h"),
+                            ));
+                        }
+                    }
+                }
+                if node.agent.is_none() && node.model.is_none() {
+                    return Err(Refusal::new(
+                        at,
+                        "names neither an agent nor a model — add agent: <cli> or model: <provider>/<id>",
+                    ));
+                }
+            }
+            other => {
+                return Err(Refusal::new(
+                    at,
+                    format!("{other} is not an agent name or a mapping with agent, model, timeout"),
+                ));
+            }
+        }
+        out.push(node);
+    }
+    Ok(out)
+}
+
+/// An agent CLI's name: lowercase letters, digits and hyphens. Which ones run is the host's check.
+fn parse_agent_name(name: &str, at: &str) -> Result<String, Refusal> {
+    let ok = name.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-');
+    if ok {
+        Ok(name.to_string())
+    } else {
+        Err(Refusal::new(
+            at,
+            format!(
+                "{} is not an agent name — for example claude or codex",
+                quote(name)
+            ),
+        ))
+    }
 }
 
 /// Set `enabled:` with a one-line edit, keeping formatting, comments and line endings. Adds the
@@ -890,7 +1028,7 @@ mod tests {
         );
         assert_eq!(
             refusal(&with("mode: strict\n", &strict_body), "x"),
-            "mode: unknown field — Draft 0.1.0 has name, description, enabled, model, timeout, on, hooks, flow"
+            "mode: unknown field — Draft 0.2.0 has name, description, enabled, model, timeout, on, hooks, flow, nodes"
         );
     }
 

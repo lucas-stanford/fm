@@ -1131,3 +1131,167 @@ fn a_worktree_that_cannot_be_made_fails_the_run_and_never_falls_back() {
     assert!(!record.exists());
     assert_eq!(h.records(&l).len(), 1);
 }
+
+// --- nodes: a step handed to its own agent ---------------------------------------------------
+
+const NODE_BODY: &str = "# Fix and review\n\n```mermaid\nflowchart TD\n  read[\"Read the failure\"] --> review[\"Review the fix\"]\n```\n\n## Read the failure {#read}\n\nRead the failure in the input.\n\n## Review the fix {#review}\n\nReview the change, and list what is wrong with it.";
+
+/// A run of `nodes-demo` with its progress open and its body started, as `fire` leaves it.
+fn node_run(h: &Host, deadline: chrono::DateTime<Utc>) -> (Located, String) {
+    let front = "flow: strict\nnodes:\n  review:\n    agent: pi\n    model: openai/gpt-5:high\n    timeout: 10m\non:\n  manual: true\n";
+    let l = h.automation("nodes-demo", front, NODE_BODY, &[]);
+    let run = "20260917-140000-n0d3".to_string();
+    let node = |id: &str, label: &str, next: &[&str]| fm_state::ChartNode {
+        id: id.into(),
+        label: label.into(),
+        successors: next.iter().map(|s| s.to_string()).collect(),
+    };
+    fm_state::open_progress(
+        &h.paths,
+        &fm_state::OpenArgs {
+            run_id: run.clone(),
+            key: l.key.clone(),
+            name: l.automation.name.clone(),
+            chart: "flowchart TD\n  read[\"Read the failure\"] --> review[\"Review the fix\"]\n"
+                .into(),
+            nodes: vec![
+                node("read", "Read the failure", &["review"]),
+                node("review", "Review the fix", &[]),
+            ],
+            strict: true,
+        },
+        Utc::now(),
+    )
+    .unwrap();
+    fm_run::node::save_context(
+        &h.paths,
+        &run,
+        &fm_run::node::NodeContext {
+            key: l.key.clone(),
+            cwd: h.out.clone(),
+            deadline: deadline.to_rfc3339(),
+            input: "---\n<automation-input>\nissue 7: the parser drops the last line\n</automation-input>".into(),
+        },
+    );
+    (l, run)
+}
+
+#[test]
+fn a_node_runs_its_own_section_through_its_own_agent_and_answers() {
+    let h = host();
+    let (l, run) = node_run(&h, Utc::now() + chrono::Duration::hours(1));
+    let fixture = h.answer(
+        "review",
+        "One problem: the loop still skips the last line.",
+        "sess-node",
+    );
+    let record = h.out("node-agent.txt");
+    let config = h.config(
+        CliId::Pi,
+        Path::new(&bin()),
+        &[arg("fixture", &fixture), arg("record", &record)],
+    );
+    let deps = fm_run::node::NodeDeps {
+        paths: &h.paths,
+        config: &config,
+        located: &l,
+        path_env: Vec::new(),
+        poll: Duration::from_millis(50),
+    };
+    let req = fm_run::node::NodeRequest {
+        id: "review".into(),
+        handoff: Some("The fix is in src/parse.rs, lines 40-52.".into()),
+        cwd: None,
+    };
+    let answer = fm_run::node::run_node(&deps, &run, &req, Utc::now).unwrap();
+    assert_eq!(
+        answer.answer.trim(),
+        "One problem: the loop still skips the last line."
+    );
+    assert_eq!(
+        (answer.agent.as_str(), answer.model.as_str()),
+        ("pi", "openai/gpt-5:high")
+    );
+    assert!(answer.transcript.exists());
+
+    // The node's agent got its own section, the handoff and the run's input, and not the others.
+    let (args, stdin) = h.agent_saw(&record).expect("the node's agent ran");
+    assert!(
+        args.windows(2).any(|w| w == ["--model", "openai/gpt-5"]),
+        "{args:?}"
+    );
+    assert!(
+        args.windows(2).any(|w| w == ["--thinking", "high"]),
+        "{args:?}"
+    );
+    assert!(
+        stdin.contains("<step>\n## Review the fix {#review}"),
+        "{stdin}"
+    );
+    assert!(!stdin.contains("## Read the failure {#read}"), "{stdin}");
+    assert!(
+        stdin.contains("The fix is in src/parse.rs, lines 40-52."),
+        "{stdin}"
+    );
+    assert!(
+        stdin.contains("issue 7: the parser drops the last line"),
+        "{stdin}"
+    );
+    assert!(stdin.contains("Do not run `fm next`"), "{stdin}");
+
+    // The run's history says who did the step and what came back.
+    let s = fm_state::progress_status(&h.paths, Some(&run)).unwrap();
+    let said: Vec<String> = s
+        .history
+        .iter()
+        .filter_map(|e| match e {
+            fm_model::HistoryEntry::Say { node, text, .. } if node == "review" => {
+                Some(text.clone())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(said[0], "handed to pi (openai/gpt-5:high)");
+    assert!(said[1].starts_with("pi answered: One problem"), "{said:?}");
+    assert_eq!(s.node("review").unwrap().status, StepStatus::Active);
+}
+
+#[test]
+fn a_node_is_refused_for_a_step_the_chart_lacks_and_stopped_once_the_run_is_out_of_time() {
+    let h = host();
+    let config = h.config(CliId::Pi, Path::new(&bin()), &[]);
+    let (l, run) = node_run(&h, Utc::now() - chrono::Duration::seconds(1));
+    let deps = fm_run::node::NodeDeps {
+        paths: &h.paths,
+        config: &config,
+        located: &l,
+        path_env: Vec::new(),
+        poll: Duration::from_millis(50),
+    };
+    let ask = |id: &str| {
+        fm_run::node::run_node(
+            &deps,
+            &run,
+            &fm_run::node::NodeRequest {
+                id: id.into(),
+                ..Default::default()
+            },
+            Utc::now,
+        )
+    };
+    match ask("deploy") {
+        Err(fm_run::node::NodeError::Refused(m)) => {
+            assert_eq!(
+                m,
+                "no node deploy on the chart — the steps are read, review"
+            );
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(
+        ask("review"),
+        Err(fm_run::node::NodeError::Stopped(
+            "the run is out of time".into()
+        ))
+    );
+}

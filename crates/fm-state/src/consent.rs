@@ -332,6 +332,7 @@ mod tests {
                 hooks: Hooks::default(),
                 flow: Flow::Loose,
                 body: "b".into(),
+                nodes: Vec::new(),
             },
             file: dir.join("AUTOMATION.md"),
             dir,

@@ -248,6 +248,9 @@ pub fn preview_lines(
     for (phase, what) in &p.hooks {
         out.push(row(phase, what));
     }
+    for (id, what) in &p.nodes {
+        out.push(row(&format!("node {id}"), what));
+    }
     if let Some(w) = &p.watch {
         out.push(row("watch runs", w));
     }

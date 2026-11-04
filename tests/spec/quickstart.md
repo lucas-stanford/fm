@@ -9,7 +9,7 @@ You will write an automation that greets you with the date, have your host check
 
 ## Prerequisites
 
-- An agent with a host that implements Agent Automations Draft 0.1.0. The [Hosts](hosts.md) page lists the ones known.
+- An agent with a host that implements Agent Automations Draft 0.2.0. The [Hosts](hosts.md) page lists the ones known.
 - A model you are logged in to. Scheduled runs do not see API keys from your shell profile.
 
 > [!NOTE]
