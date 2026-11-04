@@ -303,6 +303,8 @@ fn pick(host: &mut RealHost, name: &str) -> Result<Status, i32> {
 
 /// `fm validate`: the file alone, without the machine checks (`fm check` does those).
 fn validate(path: &std::path::Path, name: Option<&str>, json: bool) -> i32 {
+    // `.` and `..` have no folder name to check `name` against; the real path does.
+    let path = &std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
     let file = if path.is_dir() {
         path.join("AUTOMATION.md")
     } else {

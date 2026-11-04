@@ -14,7 +14,9 @@ use fm_model::{
     AgentCli, CliId, CliModel, CliSettings, Config, Located, NodeAgent, StatePaths, TurnRequest,
 };
 use fm_spec::step_sections;
-use fm_state::{SayArgs, StepArgs, progress_say, progress_status, progress_step};
+use fm_state::{
+    NextArgs, SayArgs, StepArgs, progress_next, progress_say, progress_status, progress_step,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::live::LiveWriter;
@@ -322,16 +324,40 @@ pub fn run_node(
         )));
     }
 
-    let _ = progress_step(
-        paths,
-        Some(run_id),
-        &StepArgs {
-            node: node.id.clone(),
-            status: None,
-            text: None,
-        },
-        now(),
-    );
+    // Handing a step over moves the run there: from the one step going, along the chart's arrow,
+    // as `fm next` would, so the step before it is finished and the arrow is in the history.
+    let from = snap
+        .nodes
+        .iter()
+        .filter(|n| n.status == fm_model::StepStatus::Active && n.id != node.id)
+        .collect::<Vec<_>>();
+    let moved = match from.as_slice() {
+        [one] if one.successors.contains(&node.id) => progress_next(
+            paths,
+            Some(run_id),
+            &NextArgs {
+                to: node.id.clone(),
+                from: Some(one.id.clone()),
+                env_node: None,
+                text: Some(format!("handed to {}", plan.cli)),
+            },
+            now(),
+        )
+        .is_ok(),
+        _ => false,
+    };
+    if !moved {
+        let _ = progress_step(
+            paths,
+            Some(run_id),
+            &StepArgs {
+                node: node.id.clone(),
+                status: None,
+                text: None,
+            },
+            now(),
+        );
+    }
     say(
         paths,
         run_id,
