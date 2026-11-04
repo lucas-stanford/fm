@@ -180,6 +180,23 @@ impl Tracker {
         self.check(r);
     }
 
+    /// The body answered: the step it was on when it finished is done, not interrupted.
+    pub(crate) fn finish_steps(&mut self, now: DateTime<Utc>) {
+        if !self.started {
+            return;
+        }
+        let Some(snap) = fm_state::read_progress(&self.paths, &self.run_id) else {
+            return;
+        };
+        for n in snap
+            .nodes
+            .iter()
+            .filter(|n| n.status == StepStatus::Active && !fm_spec::is_reserved_node(&n.id))
+        {
+            self.mark(&n.id, StepStatus::Done, None, now);
+        }
+    }
+
     /// An update on the node going now.
     pub(crate) fn say(&mut self, text: &str, now: DateTime<Utc>) {
         let Some(target) = self.active.clone() else {

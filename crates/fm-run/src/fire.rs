@@ -1062,6 +1062,7 @@ fn go(
                     None => {
                         answer = r.answer.unwrap_or_default();
                         g.tracker.say(&answer, g.now());
+                        g.tracker.finish_steps(g.now());
                         g.tracker.mark("body", StepStatus::Done, None, g.now());
                     }
                     Some(e) => {
