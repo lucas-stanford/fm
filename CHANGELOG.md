@@ -21,6 +21,12 @@ First public release.
   package builds the `fm` binary.
 - The terminal UI uses ratatui 0.30.
 - `tests/spec/` holds the specification's pages; the conformance tests run every example in them.
+- `fm render --format markdown` prints the chart as a ```mermaid block with each node in its status
+  colour and each arrow taken highlighted, for a page that draws Mermaid (a GitHub issue).
+- A run keeps everything it reported in order: `fm status --json` and the run record have
+  `history`, every step, each decision (`fm next`, with its `-m` saying why), each update, note and
+  message. `fm status --format markdown` is the run as a page: its chart, a table of its steps with
+  how long each took, and that timeline.
 
 - `fm render` draws a Mermaid flowchart with a status on each node, as plain
   text (no escape codes) or as a standalone, sanitised SVG.

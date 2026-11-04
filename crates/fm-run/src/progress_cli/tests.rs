@@ -433,3 +433,87 @@ fn every_verb_is_known_and_the_help_names_them() {
         assert!(help.contains(&format!("fm {v} ")), "{v}");
     }
 }
+
+#[test]
+fn status_as_markdown_shows_the_chart_the_steps_and_every_decision() {
+    let o = opened_with(CHART, true);
+    let env = o.env();
+    for args in [
+        &["next", "body", "--from", "pre0"][..],
+        &["next", "read", "--from", "body"],
+        &[
+            "say",
+            "Steps are given, but they need a signed-in browser",
+            "--node",
+            "read",
+        ],
+        &[
+            "next",
+            "draft",
+            "--from",
+            "read",
+            "-m",
+            "No browser here, so straight to the verdict",
+        ],
+        &[
+            "note",
+            "Verdict posted",
+            "--link",
+            "issue=https://github.com/o/r/issues/7#c1",
+        ],
+        &[
+            "message",
+            "Cannot tell without a browser; asked on the issue",
+        ],
+    ] {
+        assert_eq!(cli(args, &env).code, 0, "{args:?}");
+    }
+
+    let md = cli(&["status", "--format", "markdown"], &env);
+    assert_eq!(md.code, 0, "{md:?}");
+    let page = md.stdout;
+    assert!(
+        page.starts_with("**demo** · run `20260917-140000-a1b2` · now: **Draft the verdict**"),
+        "{page}"
+    );
+    // The chart, coloured by status, for GitHub to draw.
+    assert!(page.contains("```mermaid\nflowchart TD\n"), "{page}");
+    assert!(page.contains("class draft fm_active"), "{page}");
+    // One row per step.
+    assert!(page.contains("| ✅ | Read the issue | 0s |"), "{page}");
+    assert!(
+        page.contains("| ⏳ | **Draft the verdict** | 0s so far |"),
+        "{page}"
+    );
+    assert!(page.contains("| ⬜ | Try it on production |  |"), "{page}");
+    // The update, the decision with why, what was published and the message, in order.
+    let update = page
+        .find("- 14:00 UTC · Read the issue: Steps are given")
+        .expect("update");
+    let decision = page
+        .find("- 14:00 UTC · ➜ **Read the issue → Draft the verdict**: No browser here, so straight to the verdict")
+        .expect("decision");
+    let note = page
+        .find("📝 Verdict posted — [issue](https://github.com/o/r/issues/7#c1)")
+        .expect("note");
+    assert!(update < decision && decision < note, "{page}");
+    assert!(
+        page.contains("**Message:** Cannot tell without a browser; asked on the issue"),
+        "{page}"
+    );
+
+    // --json is the other answer, and keeps the same history.
+    let v = json(&cli(&["status", "--json"], &env));
+    let kinds: Vec<&str> = v["data"]["history"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["kind"].as_str().unwrap())
+        .collect();
+    assert_eq!(kinds, ["next", "next", "say", "next", "note", "message"]);
+    assert_eq!(
+        cli(&["status", "--json", "--format", "markdown"], &env).code,
+        1
+    );
+    assert_eq!(cli(&["status", "--format", "html"], &env).code, 1);
+}

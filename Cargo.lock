@@ -1029,6 +1029,7 @@ dependencies = [
  "chrono",
  "fm-agents",
  "fm-model",
+ "fm-render",
  "fm-spec",
  "fm-state",
  "nix 0.31.3",

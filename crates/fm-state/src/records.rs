@@ -163,6 +163,7 @@ pub(crate) mod tests {
             message: None,
             count: None,
             pid: None,
+            history: Vec::new(),
         }
     }
 

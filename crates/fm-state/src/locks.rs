@@ -241,6 +241,7 @@ fn aborted_record(lock: &RunLockFile, now: DateTime<Utc>) -> RunRecord {
         message: None,
         count: None,
         pid: Some(lock.info.pid),
+        history: Vec::new(),
     }
 }
 

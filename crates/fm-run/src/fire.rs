@@ -389,6 +389,7 @@ impl Base<'_> {
             message: None,
             count: None,
             pid: None,
+            history: Vec::new(),
         }
     }
 

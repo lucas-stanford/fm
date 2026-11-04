@@ -321,6 +321,7 @@ fn render_chart_draws_in_process() {
         taken: vec![],
         notes: vec![],
         message: None,
+        history: Vec::new(),
     };
     let text = host.render_chart(chart, Some(&progress), 200).unwrap();
     assert!(

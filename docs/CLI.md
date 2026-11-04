@@ -309,11 +309,11 @@ skip discovery, so they answer fast from any folder.
 | Command | Does |
 |---|---|
 | `fm step <node> [--status active\|waiting\|done\|failed\|skipped] [-m text]` | Sets one node. `active` by default. |
-| `fm next <to> [--from <node>] [-m text]` | Finishes `<node>` and starts `<to>`. `--from` defaults to `AUTOMATION_NODE`, else the one running node. In a `flow: strict` run, the move must follow an arrow of the flowchart. |
+| `fm next <to> [--from <node>] [-m text]` | Finishes `<node>` and starts `<to>`: a decision, and `-m` says why. `--from` defaults to `AUTOMATION_NODE`, else the one running node. In a `flow: strict` run, the move must follow an arrow of the flowchart. |
 | `fm say <text> [--node <node>] [--request-id <key>]` | Adds an update to a node. |
 | `fm note <text> [--link "label=https://…"]… [--request-id <key>]` | A note on the run record, with the links it published. |
 | `fm message <text> [--link "label=https://…"]… [--request-id <key>]` | The run's one message for its reader. The last one wins. |
-| `fm status` | Where the run is: every node, the arrows taken, the notes, the message. |
+| `fm status [--format markdown]` | Where the run is: every node, the arrows taken, the notes, the message. `--json` adds `history`: every step, decision (`next`, with its `-m`) and update, in order. |
 
 Name a node by its id, or by its exact label when no other node has that label. Repeating the same
 `step` or `next` changes nothing the second time; `--request-id` makes `say`, `note` and `message`

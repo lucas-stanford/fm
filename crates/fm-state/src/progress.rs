@@ -14,7 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Duration, Utc};
-use fm_model::{RunLink, RunNote, RunProgress, RunRecord, StatePaths, StepStatus};
+use fm_model::{HistoryEntry, RunLink, RunNote, RunProgress, RunRecord, StatePaths, StepStatus};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -172,6 +172,8 @@ pub struct ProgressSnapshot {
     /// The latest message; a later one replaces it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<RunNote>,
+    /// Everything reported so far, in order: steps, decisions (`next`), updates, notes, messages.
+    pub history: Vec<HistoryEntry>,
     pub closed: bool,
     /// How many events were applied. Moves on every change, so it keys a render cache.
     pub revision: usize,
@@ -354,6 +356,7 @@ fn fold(events: &[Event]) -> Option<ProgressSnapshot> {
         taken: Vec::new(),
         notes: Vec::new(),
         message: None,
+        history: Vec::new(),
         closed: false,
         revision: events.len(),
     };
@@ -373,11 +376,23 @@ fn fold(events: &[Event]) -> Option<ProgressSnapshot> {
                         snap.nodes[i].text = Some(t.clone());
                     }
                 }
+                snap.history.push(HistoryEntry::Step {
+                    at: at.clone(),
+                    node: node.clone(),
+                    status: *status,
+                    text: text.clone(),
+                });
             }
             Event::Next { from, to, text, at } => {
                 let (Some(f), Some(t)) = (index(&snap, from), index(&snap, to)) else {
                     continue;
                 };
+                snap.history.push(HistoryEntry::Next {
+                    at: at.clone(),
+                    from: from.clone(),
+                    to: to.clone(),
+                    text: text.clone(),
+                });
                 if !settled(snap.nodes[f].status) {
                     set_status(&mut snap.nodes[f], StepStatus::Done, at);
                 }
@@ -389,28 +404,49 @@ fn fold(events: &[Event]) -> Option<ProgressSnapshot> {
                     snap.taken.push((from.clone(), to.clone()));
                 }
             }
-            Event::Say { node, text, .. } => {
+            Event::Say { node, text, at, .. } => {
                 if let Some(i) = index(&snap, node) {
                     snap.nodes[i].text = Some(text.clone());
                 }
+                snap.history.push(HistoryEntry::Say {
+                    at: at.clone(),
+                    node: node.clone(),
+                    text: text.clone(),
+                });
             }
             Event::Note {
                 text, links, at, ..
-            } => snap.notes.push(RunNote {
-                ts: at.clone(),
-                text: text.clone(),
-                links: links.clone(),
-            }),
+            } => {
+                snap.notes.push(RunNote {
+                    ts: at.clone(),
+                    text: text.clone(),
+                    links: links.clone(),
+                });
+                snap.history.push(HistoryEntry::Note {
+                    at: at.clone(),
+                    text: text.clone(),
+                    links: links.clone(),
+                });
+            }
             Event::Message {
                 text, links, at, ..
             } => {
+                snap.history.push(HistoryEntry::Message {
+                    at: at.clone(),
+                    text: text.clone(),
+                    links: links.clone(),
+                });
                 snap.message = Some(RunNote {
                     ts: at.clone(),
                     text: text.clone(),
                     links: links.clone(),
                 });
             }
-            Event::Close { at, .. } => {
+            Event::Close { at, outcome } => {
+                snap.history.push(HistoryEntry::Close {
+                    at: at.clone(),
+                    outcome: outcome.clone(),
+                });
                 snap.closed = true;
                 // A node still going when the run ended did not finish.
                 for n in &mut snap.nodes {
@@ -443,6 +479,7 @@ pub fn progress_of(snap: &ProgressSnapshot) -> RunProgress {
         taken: snap.taken.clone(),
         notes: snap.notes.clone(),
         message: snap.message.clone(),
+        history: snap.history.clone(),
     }
 }
 
@@ -460,6 +497,9 @@ pub fn with_progress(mut rec: RunRecord, progress: &RunProgress) -> RunRecord {
     }
     if progress.message.is_some() {
         rec.message = progress.message.clone();
+    }
+    if !progress.history.is_empty() {
+        rec.history = progress.history.clone();
     }
     rec
 }
@@ -1258,6 +1298,98 @@ mod tests {
 
     fn revision(p: &StatePaths) -> usize {
         read_progress(p, RUN).unwrap().revision
+    }
+
+    #[test]
+    fn history_keeps_every_step_decision_and_update_in_order() {
+        let (_d, p) = open(true);
+        next(&p, "body", Some("pre0"), None).unwrap();
+        next(&p, "gather", Some("body"), None).unwrap();
+        let say = |text: &str| {
+            progress_say(
+                &p,
+                Some(RUN),
+                &SayArgs {
+                    text: text.into(),
+                    node: Some("gather".into()),
+                    env_node: None,
+                    request_id: None,
+                },
+                now(),
+            )
+            .unwrap()
+        };
+        say("12 open pull requests");
+        say("only A touches the API");
+        progress_next(
+            &p,
+            Some(RUN),
+            &NextArgs {
+                to: "a".into(),
+                from: Some("gather".into()),
+                env_node: None,
+                text: Some("A changes the API, so it needs a review; B is docs".into()),
+            },
+            now(),
+        )
+        .unwrap();
+        let linked = |text: &str| LinkedArgs {
+            text: text.into(),
+            links: vec!["review=https://example.com/pr/1#review".into()],
+            request_id: None,
+        };
+        progress_note(&p, Some(RUN), &linked("Reviewed A"), now()).unwrap();
+        progress_message(&p, Some(RUN), &linked("A reviewed; B skipped"), now()).unwrap();
+        let closed = close_progress(&p, RUN, "ok", now()).unwrap().unwrap();
+
+        // Each update survives in the history, though the node keeps only the latest.
+        let kinds: Vec<String> = closed
+            .history
+            .iter()
+            .map(|e| {
+                serde_json::to_value(e).unwrap()["kind"]
+                    .as_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .collect();
+        assert_eq!(
+            kinds,
+            [
+                "next", "next", "say", "say", "next", "note", "message", "close"
+            ]
+        );
+        assert_eq!(
+            closed.history[2],
+            HistoryEntry::Say {
+                at: "2026-09-17T12:00:00.000Z".into(),
+                node: "gather".into(),
+                text: "12 open pull requests".into(),
+            }
+        );
+        // The decision, with why.
+        assert_eq!(
+            closed.history[4],
+            HistoryEntry::Next {
+                at: "2026-09-17T12:00:00.000Z".into(),
+                from: "gather".into(),
+                to: "a".into(),
+                text: Some("A changes the API, so it needs a review; B is docs".into()),
+            }
+        );
+        assert_eq!(
+            serde_json::to_value(&closed.history[7]).unwrap(),
+            serde_json::json!({"kind": "close", "at": "2026-09-17T12:00:00.000Z", "outcome": "ok"})
+        );
+        // The record carries it.
+        let bare: RunRecord = serde_json::from_value(serde_json::json!({
+            "id": RUN, "key": "user:/r:x", "name": "x", "scope": "user", "root": "/r",
+            "trigger": "manual", "late": false, "recordedAt": "2026-09-17T12:00:00.000Z",
+            "outcome": "ok"
+        }))
+        .unwrap();
+        let rec = with_progress(bare, &closed);
+        assert_eq!(rec.history, closed.history);
     }
 
     #[test]

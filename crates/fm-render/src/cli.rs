@@ -5,15 +5,15 @@ use std::process::ExitCode;
 
 use crate::error::{Code, Failure, Result, fail};
 use crate::flow::parse;
-use crate::render::{svg, text, theme::Theme};
+use crate::render::{markdown, svg, text, theme::Theme};
 use crate::state::State;
 
-const SHORT_USAGE: &str = "Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|light] [--out <file>]";
+const SHORT_USAGE: &str = "Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg|markdown] [--theme dark|light] [--out <file>]";
 
 const USAGE: &str = "\
 fm draws a Mermaid flowchart with node statuses, as SVG or text.
 
-Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|light] [--out <file>]
+Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg|markdown] [--theme dark|light] [--out <file>]
 
 Commands:
   render  Draw a flowchart with node statuses
@@ -26,15 +26,17 @@ Run 'fm render --help' for details.
 ";
 
 const RENDER_HELP: &str = "\
-Draw a Mermaid flowchart with node statuses, as text or SVG.
+Draw a Mermaid flowchart with node statuses, as text, SVG or a Markdown mermaid block.
 
-Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|light] [--out <file>]
+Usage: fm render --plan <file|-> [--state <file|->] [--format text|svg|markdown] [--theme dark|light] [--out <file>]
 
 Options:
   --plan <file|->    Mermaid flowchart to draw; '-' reads stdin (required)
   --state <file|->   JSON with node statuses and arrows taken; '-' reads stdin
-  --format <format>  text (default) or svg
-  --theme <theme>    dark (default) or light; applies to svg
+  --format <format>  text (default), svg, or markdown: a ```mermaid block with
+                     status colours, for a page that draws Mermaid (GitHub)
+  --theme <theme>    dark or light; applies to svg (default dark) and
+                     markdown (default light)
   --out <file>       Write the rendering to a file instead of stdout
   -h, --help         Print this help
 
@@ -53,6 +55,7 @@ enum Format {
     #[default]
     Text,
     Svg,
+    Markdown,
 }
 
 #[derive(Debug, Default)]
@@ -60,7 +63,8 @@ struct Options {
     plan: String,
     state: Option<String>,
     format: Format,
-    theme: Theme,
+    /// `None`: the format's own default.
+    theme: Option<Theme>,
     out: Option<String>,
 }
 
@@ -166,16 +170,19 @@ fn parse_args(argv: &[String]) -> Result<Invocation> {
     options.format = match format.as_deref() {
         None | Some("text") => Format::Text,
         Some("svg") => Format::Svg,
+        Some("markdown") => Format::Markdown,
         Some(other) => {
             return Err(fail!(
                 Code::Usage,
-                "--format must be text or svg, not '{other}'"
+                "--format must be text, svg or markdown, not '{other}'"
             ));
         }
     };
     if let Some(value) = theme {
-        options.theme = Theme::parse(&value)
-            .ok_or_else(|| fail!(Code::Usage, "--theme must be dark or light, not '{value}'"))?;
+        options.theme =
+            Some(Theme::parse(&value).ok_or_else(|| {
+                fail!(Code::Usage, "--theme must be dark or light, not '{value}'")
+            })?);
     }
     Ok(Invocation::Render(options))
 }
@@ -191,7 +198,10 @@ fn render(options: &Options) -> Result<String> {
 
     let mut rendered = match options.format {
         Format::Text => text::render(&plan, &flow, &state)?,
-        Format::Svg => svg::render(&plan, &flow, &state, options.theme)?,
+        Format::Svg => svg::render(&plan, &flow, &state, options.theme.unwrap_or(Theme::Dark))?,
+        Format::Markdown => {
+            markdown::render(&plan, &flow, &state, options.theme.unwrap_or(Theme::Light))
+        }
     };
     if !rendered.ends_with('\n') {
         rendered.push('\n');
@@ -245,11 +255,14 @@ mod tests {
     }
 
     #[test]
-    fn defaults_are_text_and_dark() {
+    fn defaults_are_text_and_the_formats_own_theme() {
         let parsed = options(&["render", "--plan", "p.mmd"]).expect("parse");
         assert_eq!(parsed.plan, "p.mmd");
         assert_eq!(parsed.format, Format::Text);
-        assert_eq!(parsed.theme, Theme::Dark);
+        // svg draws dark and markdown light unless --theme says otherwise.
+        assert_eq!(parsed.theme, None);
+        let md = options(&["render", "--plan", "p.mmd", "--format", "markdown"]).expect("parse");
+        assert_eq!(md.format, Format::Markdown);
         assert!(parsed.state.is_none() && parsed.out.is_none());
     }
 
@@ -270,7 +283,7 @@ mod tests {
         assert_eq!(parsed.plan, "-");
         assert_eq!(parsed.state.as_deref(), Some("s.json"));
         assert_eq!(parsed.format, Format::Svg);
-        assert_eq!(parsed.theme, Theme::Light);
+        assert_eq!(parsed.theme, Some(Theme::Light));
         assert_eq!(parsed.out.as_deref(), Some("o.svg"));
     }
 

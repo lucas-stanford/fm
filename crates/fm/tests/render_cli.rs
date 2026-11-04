@@ -84,6 +84,34 @@ fn text_is_the_default_and_carries_status_glyphs() {
 }
 
 #[test]
+fn markdown_is_a_mermaid_block_with_status_colours() {
+    let dir = tempfile::tempdir().unwrap();
+    let state = state_file(&dir, STATE);
+    let md = ok(&fm(
+        &[
+            "render",
+            "--plan",
+            &branch(),
+            "--state",
+            &state,
+            "--format",
+            "markdown",
+        ],
+        None,
+    ));
+    assert!(md.starts_with("```mermaid\nflowchart LR\n"), "{md}");
+    assert!(md.trim_end().ends_with("```"), "{md}");
+    for class in ["fm_done", "fm_active", "fm_skipped", "fm_pending"] {
+        assert!(md.contains(class), "no {class}");
+    }
+    // Light by default, so it reads on a light page; the taken arrows are highlighted.
+    assert!(md.contains("#107c10"), "{md}");
+    assert!(md.contains("linkStyle "), "{md}");
+    // The author's labels are left as written.
+    assert!(!md.contains("@{"), "{md}");
+}
+
+#[test]
 fn svg_is_standalone_themed_and_marks_taken_edges() {
     let dir = tempfile::tempdir().unwrap();
     let state = state_file(&dir, STATE);

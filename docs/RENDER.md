@@ -2,7 +2,8 @@
 
 `fm render` draws a [Mermaid](https://mermaid.js.org/) flowchart with the status of each node: done,
 active, failed and so on. You give it the chart and a small JSON state; it prints plain text for a
-terminal or a standalone SVG for a browser. It runs nothing and keeps nothing between calls, so any
+terminal, a standalone SVG for a browser, or a Markdown ```mermaid block for a page that draws
+Mermaid itself, such as a GitHub issue. It runs nothing and keeps nothing between calls, so any
 tool that tracks progress through a flowchart can call it. fm's own run pages draw a run's chart the
 same way, in-process.
 
@@ -55,15 +56,15 @@ The chart and state are in [`assets/screenshots`](../assets/screenshots).
 ## Usage
 
 ```
-fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|light] [--out <file>]
+fm render --plan <file|-> [--state <file|->] [--format text|svg|markdown] [--theme dark|light] [--out <file>]
 ```
 
 | Option | Meaning |
 |---|---|
 | `--plan` | Mermaid flowchart to draw; `-` reads stdin. Required. |
 | `--state` | Node statuses and arrows taken (JSON); `-` reads stdin. Optional. |
-| `--format` | `text` (default): box-drawing text with no escape codes. `svg`: a standalone, sanitised SVG. |
-| `--theme` | `dark` (default) or `light`. Applies to SVG. |
+| `--format` | `text` (default): box-drawing text with no escape codes. `svg`: a standalone, sanitised SVG. `markdown`: the chart in a ```mermaid block, each node filled in its status colour and each arrow taken highlighted, with your labels as written. |
+| `--theme` | `dark` or `light`. SVG is dark and Markdown light unless you say. |
 | `--out` | Write to a file instead of stdout. |
 
 Only one of `--plan` and `--state` can read stdin. In SVG output every node

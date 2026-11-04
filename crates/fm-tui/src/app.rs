@@ -365,6 +365,7 @@ impl App {
                         taken: r.taken.clone(),
                         notes: r.notes.clone(),
                         message: r.message.clone(),
+                        history: r.history.clone(),
                     }),
                 ))
             }
