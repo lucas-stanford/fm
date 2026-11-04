@@ -1,0 +1,38 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Keys
+
+  The page
+    Needs you         something went wrong or waits for you
+    Running now       runs going right now; nothing to do
+    Coming up         what runs on its schedule, soonest first
+    Watching          what a watch starts, and how often it checks
+    Off and disabled  disabled or not armed yet
+
+  On the selected automation
+    enter      open it: what it does, its last run, every action
+    r  x       run now · stop its run (it asks first)
+    s  l       show its run · its runs
+    space      arm (after the consent preview), disarm, enable or disable
+    p          pause or resume its watch
+    e  a  c    edit · choose its agent · check: every technical detail
+
+  On a run page
+    ↑↓         choose a run
+    g          flowchart, or back to the steps
+    o          open a link it published
+    PgUp PgDn  scroll
+
+  Everywhere
+    esc        back
+    q          close
+    y          yes, when asked
+    R          read everything again
+
+
+
+
+
+                                                                        esc back

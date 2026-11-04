@@ -1,0 +1,48 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+daily-briefing · ok                                                      took 4m
+
+  daily-briefing finished 1 day ago; it took 4 minutes.
+  Started by its schedule yesterday at 08:00.
+
+  Steps
+    ✓ Gather inbox        31 new threads
+    ✓ Triage threads
+    ✓ Draft summary
+    ✓ Anything urgent?    nothing urgent
+    ↷ Flag urgent items
+    ✓ Post to Slack
+    ✓ Finish
+
+  Message
+    Posted the briefing: 31 threads, 2 meetings moved, nothing urgent.
+    ↗ Slack thread  https://acme.slack.com/archives/C01/p1730127840
+
+  Notes
+    Summary posted to #team
+      ↗ #team  https://acme.slack.com/archives/C01/p1730127840
+    Calendar: standup moved to 09:30
+      ↗ event  https://calendar.example.com/e/5521
+
+  Answer
+    Done. The briefing is in #team.
+
+  run 20261028-080001-1a2b · claude
+
+
+
+
+
+
+
+
+  Runs
+    ▶ now              2m   running — step 3/7
+  ❯ ✓ yesterday 08:00  4m   Posted the briefing: 31 threads, 2 meetings moved,…
+    ✓ Tue 08:00        6m   Posted the briefing: 1 urgent thread flagged for yo…
+    ✗ Mon 08:00        1m   claude exited 1: rate limited — try again later
+    ↷ Fri 08:00             skipped: nothing new in the inbox
+
+↑↓ choose a run · g flowchart · o open link · e edit                    esc back

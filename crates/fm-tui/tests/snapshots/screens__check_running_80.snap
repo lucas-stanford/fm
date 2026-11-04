@@ -1,0 +1,34 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+daily-briefing · check
+
+  key            user:~/.agents/automations:daily-briefing
+  folder         ~/.agents/automations/daily-briefing
+  scope          user
+  state          armed
+  agent          claude
+  model          anthropic/claude-sonnet-5
+  timeout        30m
+  enabled        true
+  flow           loose
+  flowchart      tracked
+  schedule       0 8 * * 1-5 · America/Los_Angeles · catch-up once
+  Scheduled for  tomorrow 08:00
+  manual         allowed
+  running        run 20261029-082800-5b7f · pid 4812 · started by hand at 08:28
+  last run       ok · yesterday 08:04 · took 4m
+
+
+
+
+
+
+
+
+
+
+
+
+e edit                                                                  esc back

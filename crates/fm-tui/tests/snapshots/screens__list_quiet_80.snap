@@ -1,0 +1,18 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Automations                                       watcher on — last tick 12s ago
+
+  All quiet — next run in 30m
+
+  Coming up
+  ❯ ● standup-notes   Scheduled for today 09:00        also armed in pa  copilot
+    ● branch-review   when you run it                                    pi
+
+  Watching
+    ● pr-review       watching every 10m — said "2 new pull requests:…   codex
+
+  ↓ more below
+
+r run now · enter open · l runs · e edit · a agent · ↑↓ move     ? help · q quit

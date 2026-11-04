@@ -1,0 +1,14 @@
+[package]
+name = "fm-model"
+description = "Shared types and traits for fm: automations, run records, consent, state, agent CLIs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

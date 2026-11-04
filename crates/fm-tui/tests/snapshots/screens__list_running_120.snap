@@ -1,0 +1,16 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Automations                                                                                 watcher off — no tick for 2h
+
+  Nothing needs you — 1 running now
+
+  Running now
+  ❯ ▶ daily-briefing  running 2m — step 3/7                                                                      claude
+
+  Coming up
+    ● standup-notes   Scheduled for today 09:00                                                also armed in pa  copilot
+
+
+s show it · enter open · x stop it · e edit · a agent · c check · ↑↓ move                                ? help · q quit

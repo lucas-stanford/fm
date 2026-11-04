@@ -1,0 +1,14 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: "draw(&mut app, &mut host, 80, 10)"
+---
+Arm broken-cron
+
+  It cannot be armed: broken-cron: on.schedule.cron: "0 9 * *" has 4 fields —
+  a cron is five fields: minute hour day month weekday
+
+
+
+
+
+                                                                        esc back

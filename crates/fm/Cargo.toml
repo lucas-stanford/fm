@@ -1,0 +1,45 @@
+[package]
+name = "flow-manager"
+description = "Run Agent Automations through any agent CLI, with a terminal UI, and draw their flowcharts"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["automation", "agents", "mermaid", "flowchart", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+default-run = "fm"
+
+[lib]
+name = "fm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fm"
+path = "src/main.rs"
+
+[dependencies]
+fm-model.workspace = true
+fm-spec.workspace = true
+fm-state.workspace = true
+fm-agents.workspace = true
+fm-run.workspace = true
+fm-clock.workspace = true
+fm-tui.workspace = true
+fm-render.workspace = true
+clap = { version = "4.6.7", features = ["derive"] }
+anyhow = "1.0.104"
+serde_json.workspace = true
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+assert_cmd = "2.2.2"
+predicates = "3.1.4"
+ratatui = "0.30"
+tempfile.workspace = true

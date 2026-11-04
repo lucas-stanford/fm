@@ -1,0 +1,25 @@
+[package]
+name = "fm-clock"
+description = "The tick: schedules, catch-up, watches, and the OS watcher job"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fm-model.workspace = true
+fm-spec.workspace = true
+fm-state.workspace = true
+fm-run.workspace = true
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std"] }
+ctrlc = "3"
+hex = "0.4.3"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sha2 = "0.11.0"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

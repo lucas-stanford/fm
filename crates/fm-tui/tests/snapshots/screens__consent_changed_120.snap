@@ -1,0 +1,28 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Arm release-notes                                                                                        consent preview
+
+  ! changed since armed: scripts/collect.mjs — what it runs is not what you armed
+
+  manual    allowed
+  agent     pi
+  command   pi --mode json -p --model anthropic/claude-sonnet-5 <prompt>
+  model     anthropic/claude-sonnet-5
+  timeout   30m
+  files     AUTOMATION.md
+  expires   in 30 days, on Nov 28
+
+  Arming lets it run on this machine, with your credentials. Scripts run with your permissions.
+
+
+
+
+
+
+
+
+
+
+y arm it                                                                                                esc leave it off

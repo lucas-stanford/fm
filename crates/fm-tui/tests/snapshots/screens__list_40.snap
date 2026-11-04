@@ -1,0 +1,14 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: "draw(&mut app, &mut host, 40, 10)"
+---
+Automations
+
+  4 need you
+
+  Needs you
+  ❯ ✗ broken-cron     problem in its fi…
+    ✗ nightly-tests   failed 6h ago — c…
+  ↓ more below
+
+e fix it · enter open    ? help · q quit

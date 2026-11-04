@@ -1,0 +1,7 @@
+{"type":"init","timestamp":"2026-10-29T16:41:00.000Z","session_id":"9b4a2d3f-5c6e-4f7a-8b9c-0d1e2f3a4b5c","model":"gemini-2.5-pro"}
+{"type":"message","timestamp":"2026-10-29T16:41:00.010Z","role":"user","content":"Read the file hello.txt and reply with only its first word."}
+{"type":"message","timestamp":"2026-10-29T16:41:01.000Z","role":"assistant","content":"I will read the file.","delta":true}
+{"type":"tool_use","timestamp":"2026-10-29T16:41:01.100Z","tool_name":"read_file","tool_id":"read_file-1793291661100-1","parameters":{"absolute_path":"C:\\work\\gemini\\hello.txt"}}
+{"type":"tool_result","timestamp":"2026-10-29T16:41:01.150Z","tool_id":"read_file-1793291661100-1","status":"success","output":"banana split\r\n"}
+{"type":"message","timestamp":"2026-10-29T16:41:02.000Z","role":"assistant","content":"banana","delta":true}
+{"type":"result","timestamp":"2026-10-29T16:41:02.100Z","status":"success","stats":{"total_tokens":300,"input_tokens":280,"output_tokens":20,"cached":0,"input":280,"duration_ms":2100,"tool_calls":1,"models":{}}}

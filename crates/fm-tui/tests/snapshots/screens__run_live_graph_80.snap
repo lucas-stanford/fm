@@ -1,0 +1,44 @@
+---
+source: fm/crates/fm-tui/tests/screens.rs
+expression: text
+---
+daily-briefing · running                                      2m in · usually 5m
+
+  daily-briefing is running: 2 minutes so far, usually 5. Gives up at 30
+  minutes.
+  Started by hand at 08:28.
+
+  Flowchart
+    ✓ Gather inbox ─────────────────────────────────────┐
+    │                                                   │ nothing new
+    ✓ Triage threads                                    │
+    │                                                   │
+    ▶ Draft summary ◄─────────────┐                     │
+    │                             │                     │
+    · Anything urgent? ── yes ──► · Flag urgent items   │
+    │ no                                                │
+    · Post to Slack                                     │
+    │                                                   │
+    · Finish ◄──────────────────────────────────────────┘
+
+  Live
+    pre hook 1 · scripts/fetch_inbox.mjs · ok
+    read_file · inbox/2026-10-29.json
+    Found 14 unread threads and 3 calendar changes.
+    bash · fm step draft -m "reading 14 threads"
+    thinking · Which of these need a reply today?
+    Drafting the summary: 14 threads, grouped by project…
+
+  Notes so far
+    Moved standup to 09:30
+      ↗ event  https://calendar.example.com/e/5521
+  ↓ more below
+
+  Runs
+  ❯ ▶ now              2m   running — step 3/7
+    ✓ yesterday 08:00  4m   Posted the briefing: 31 threads, 2 meetings moved,…
+    ✓ Tue 08:00        6m   Posted the briefing: 1 urgent thread flagged for yo…
+    ✗ Mon 08:00        1m   claude exited 1: rate limited — try again later
+    ↷ Fri 08:00             skipped: nothing new in the inbox
+
+x stop it · ↑↓ choose a run · g steps · o open link · e edit            esc back

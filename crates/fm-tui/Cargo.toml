@@ -1,0 +1,19 @@
+[package]
+name = "fm-tui"
+description = "The terminal UI for managing automations"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fm-model.workspace = true
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+ratatui = "0.30"
+unicode-width = "0.2"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+insta = "1"

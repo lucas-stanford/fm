@@ -1,0 +1,34 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Automations                                       watcher on — last tick 12s ago
+
+  4 need you
+
+  Needs you
+  ❯ ✗ broken-cron     problem in its file — on.schedule.cron: "0 9 * *…  claude
+    ✗ nightly-tests   failed 6h ago — codex exited 1: tests could not…   codex
+    ! inbox-watch     watch could not check — scripts/read_inbox.mjs e…  claude
+    ! release-notes   off — changed since armed: scripts/collect.mjs     pi
+
+  Running now
+    ▶ daily-briefing  running 2m — step 3/7                              claude
+
+  Coming up
+    ● standup-notes   Scheduled for today 09:00        also armed in pa  copilot
+    ● branch-review   when you run it                                    pi
+
+  Watching
+    ‖ docs-sync       watch paused since 07:45                           copilot
+    ● pr-review       watching every 10m — said "2 new pull requests:…   codex
+
+  Off and disabled
+    ◌ new-idea        not armed yet                                      claude
+    ○ weekly-cleanup  disabled                                           claude
+
+
+
+
+
+e fix it · enter open · c check · ↑↓ move                        ? help · q quit

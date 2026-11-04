@@ -1,0 +1,28 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+standup-notes                                                                                               armed · user
+
+  standup-notes is healthy. Next run in 30 minutes, then weekdays.
+  ! also armed in pi-automations — it would run twice
+
+  Write my standup notes from yesterday's commits.
+
+  Agent      copilot · GitHub Copilot CLI
+  Last run   ✓ yesterday 09:02 · took 2m
+  Message    Yesterday: fixed the cron parser, reviewed #478. Today: release notes.
+             ↗ standup doc  https://example.com/standup/2026-10-28
+
+    r      run now
+    l      its runs
+  ❯ e      edit it
+    a      choose its agent
+    c      check: every technical detail
+    space  disable it
+           disarm it
+
+
+
+
+enter do it · ↑↓ choose                                                                                         esc back

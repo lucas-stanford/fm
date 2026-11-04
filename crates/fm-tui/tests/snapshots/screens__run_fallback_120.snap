@@ -1,0 +1,34 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+nightly-tests · failed                                                                                           took 3m
+
+  nightly-tests failed after 3 minutes: codex exited 1: tests could not start — node_modules is missing.
+  Started by its schedule at 02:00.
+
+  Flowchart
+    └ fm cannot draw a left-to-right chart yet — showing the steps instead
+    ✗ Install    failed      · npm ci: ENOENT package-lock.json
+    ↷ Run tests  skipped
+    · Report     pending
+
+  Answer
+    I could not start the tests: `npm ci` failed because package-lock.json is missing.
+
+  run 20261029-020004-9c1e · codex
+
+
+
+
+
+
+
+
+
+
+  Runs
+  ❯ ✗ today 02:00      3m    codex exited 1: tests could not start — node_modules is missing
+    ✓ yesterday 02:00  11m   All 1,284 tests passed.
+
+↑↓ choose a run · g steps · e edit                                                                              esc back

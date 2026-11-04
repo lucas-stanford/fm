@@ -1,0 +1,20 @@
+---
+source: crates/fm-tui/tests/screens.rs
+expression: text
+---
+Automations                                       watcher on — last tick 12s ago
+
+  4 need you
+
+  ↑ more above
+    ● branch-review   when you run it                                    pi
+
+  Watching
+    ‖ docs-sync       watch paused since 07:45                           copilot
+    ● pr-review       watching every 10m — said "2 new pull requests:…   codex
+
+  Off and disabled
+  ❯ ◌ new-idea        not armed yet                                      claude
+    ○ weekly-cleanup  disabled                                           claude
+
+space arm it · enter open · e edit · a agent · ↑↓ move           ? help · q quit

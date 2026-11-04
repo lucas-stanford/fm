@@ -1,168 +1,247 @@
 # fm
 
-fm draws a [Mermaid](https://mermaid.js.org/) flowchart with the status of
-each node: done, active, failed and so on. You give it the chart and a small
-JSON state; it prints plain text for a terminal or a standalone SVG for a
-browser. fm runs nothing and keeps nothing between calls, so any tool that
-tracks progress through a flowchart can call it to draw that progress.
+`fm` runs [Agent Automations](https://github.com/lucas-stanford/agent-automations) and draws their
+flowcharts. It finds `AUTOMATION.md` files, runs the ones you arm, and sends each run through the
+agent CLI you pick: pi, GitHub Copilot CLI, Claude Code, Codex CLI, Gemini CLI or OpenCode. Runs
+start on a schedule, when a watch script finds work, or by hand. The terminal UI shows what needs
+you, and each run's progress on its flowchart.
 
-```mermaid
-flowchart LR
-  start[Start] --> check{Looks right?}
-  check -->|yes| ship[Ship it]
-  check -->|no| fix[Fix it]
-  check -- unsure --> ask[Ask a human]
-```
-
-```console
-$ fm render --plan branch.mmd --state state.json
-┌─────────┐     ╭────────────────╮        ┌───────────────┐
-│         │     ╭                ╮  yes   │               │
-│ Start ✓ ├────►< Looks right? ✓ ├────┬──►│   Ship it ▶   │
-│         │     ╰                ╯    │   │               │
-└─────────┘     ╰────────┬───────╯    │   └───────────────┘
-                         │   no       │
-                         └────────────┤
-                                      │
-                                      │   ┌───────────────┐
-                                unsure├──►│    Fix it ↷   │
-                                      │   └───────────────┘
-                                      │
-                                      │   ┌───────────────┐
-                                      └──►│ Ask a human · │
-                                          └───────────────┘
-```
-
-`--format svg` draws the same flowchart with each node filled in its status
-colour and the arrows taken highlighted, in a dark or light theme.
-
-## Screenshots
-
-A release pipeline, mid-run, in the terminal:
-
-![fm render showing a release flowchart in the terminal, with done, skipped, active and pending steps](assets/screenshots/terminal.png)
-
-The same plan and state with `--format svg`:
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/release-dark.svg">
-  <img src="assets/screenshots/release-light.svg" width="360" alt="fm SVG flowchart of the release pipeline, each step coloured by its status">
-</picture>
-
-The chart and state are in [`assets/screenshots`](assets/screenshots).
+fm is the reference implementation of the Agent Automations specification: it parses and validates
+`AUTOMATION.md` exactly as the specification says, and its conformance tests run every example in
+it. [pi-automations](https://github.com/lucas-stanford/pi-automations) brings fm into the pi coding
+agent.
 
 ## Install
 
 With Rust 1.95 or later:
 
 ```sh
-cargo install --locked --git https://github.com/lucas-stanford/fm   # installs the `fm` binary
+cargo install --locked --git https://github.com/lucas-stanford/fm flow-manager   # installs `fm`
 ```
 
-When a [GitHub release](https://github.com/lucas-stanford/fm/releases) is
-published, the install scripts download its prebuilt binary for Linux (x86_64),
-macOS (Apple silicon and Intel) or Windows (x86_64) and add it to `PATH`:
+When a [GitHub release](https://github.com/lucas-stanford/fm/releases) is published, the install
+scripts download its prebuilt binary for Linux (x86_64), macOS (Apple silicon and Intel) or Windows
+(x86_64) and add it to `PATH`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lucas-stanford/fm/main/install.sh | sh        # macOS, Linux
-irm https://raw.githubusercontent.com/lucas-stanford/fm/main/install.ps1 | iex             # Windows
+curl -fsSL https://raw.githubusercontent.com/lucas-stanford/fm/main/install.sh | sh
 ```
 
-## Usage
+On Windows, in PowerShell: `irm https://raw.githubusercontent.com/lucas-stanford/fm/main/install.ps1 | iex`.
+[docs/INSTALL.md](docs/INSTALL.md) has the details.
 
-```
-fm render --plan <file|-> [--state <file|->] [--format text|svg] [--theme dark|light] [--out <file>]
-```
+## Quickstart
 
-| Option | Meaning |
-|---|---|
-| `--plan` | Mermaid flowchart to draw; `-` reads stdin. Required. |
-| `--state` | Node statuses and arrows taken (JSON); `-` reads stdin. Optional. |
-| `--format` | `text` (default): box-drawing text with no escape codes. `svg`: a standalone, sanitised SVG. |
-| `--theme` | `dark` (default) or `light`. Applies to SVG. |
-| `--out` | Write to a file instead of stdout. |
+1. Install `fm` (above) and check it with `fm --version`.
 
-Only one of `--plan` and `--state` can read stdin. In SVG output every node
-group carries `data-id="<nodeId>"`, so a page can find a node by its id.
+2. Pick the agent CLI that runs your automations. `fm agent list` shows the ones installed here.
 
-### When the text layout cannot route a chart
+   ```sh
+   fm agent list
+   fm agent default copilot
+   ```
 
-merman's text layout cannot yet route every flowchart. A chart where many
-arrows cross, such as several steps that can each stop early and jump to the
-same final step, is one example. For such a chart, `--format text` draws a
-rail instead of failing. The nodes run down one column in flow order,
-whatever direction the chart asks for. An arrow to the node drawn below runs
-between the boxes, and every other arrow is written beside its source and
-points up (`▲`) or down (`▼`) to its target, or round (`↺`) to the node itself:
+3. Write an automation, or start from `watch-inbox` in
+   [tests/conformance/valid/watch-inbox](tests/conformance/valid/watch-inbox). It summarises each
+   text file that lands in its `inbox` folder, and its two scripts need Node.js.
+
+   ```markdown
+   ---
+   name: watch-inbox
+   description: When new text files appear in this automation's inbox folder, summarise each one with its action items.
+   timeout: 15m
+   on:
+     watch:
+       script: scripts/watch.mjs
+       every: 5m
+     manual: true
+   hooks:
+     pre:
+       - script: scripts/read_inbox.mjs
+   ---
+
+   # Summarise the inbox
+
+   The input block below holds every file waiting in `inbox/`, …
+   ```
+
+   Copy the folder, with its `scripts`, into your user automations, and give it a file to read.
+   From a clone of this repository, on macOS or Linux:
+
+   ```sh
+   mkdir -p ~/.agents/automations
+   cp -r tests/conformance/valid/watch-inbox ~/.agents/automations/
+   mkdir -p ~/.agents/automations/watch-inbox/inbox
+   echo "Sam sends the budget by Friday." > ~/.agents/automations/watch-inbox/inbox/notes.txt
+   ```
+
+   On Windows, in PowerShell:
+
+   ```powershell
+   New-Item -ItemType Directory -Force $HOME\.agents\automations
+   Copy-Item -Recurse tests\conformance\valid\watch-inbox $HOME\.agents\automations\
+   New-Item -ItemType Directory -Force $HOME\.agents\automations\watch-inbox\inbox
+   Set-Content $HOME\.agents\automations\watch-inbox\inbox\notes.txt "Sam sends the budget by Friday."
+   ```
+
+4. Check it. `fm check` shows its state and any problems, then the consent preview: the exact
+   agent command, the model, the hooks and the files consent is pinned to.
+
+   ```sh
+   fm check watch-inbox
+   ```
+
+5. Arm it. `fm arm` shows the consent preview again and asks before arming.
+
+   ```sh
+   fm arm watch-inbox
+   ```
+
+6. Run it by hand, then read its runs.
+
+   ```sh
+   fm run watch-inbox
+   fm log watch-inbox
+   ```
+
+7. Start the watcher, which fires schedules and runs watch checks. It is an OS job that ticks once
+   a minute, with or without a terminal open.
+
+   ```sh
+   fm watcher start
+   fm watcher status
+   ```
+
+When you edit `AUTOMATION.md`, one of its scripts or a local module a script imports, the
+automation turns `off` until you arm it again. A failed run shows a desktop notification; set `notify-on-failed = false` in `config.toml`,
+or `FM_NO_NOTIFY=1`, to turn that off. [docs/CLI.md](docs/CLI.md) lists every command.
+
+## Reporting from inside a run
+
+The body, its hooks and anything they start can report progress with `fm step`, `fm next`,
+`fm say`, `fm note`, `fm message` and `fm status`. fm sets `AUTOMATION_RUN` for them, so these commands
+find the run from any folder, and the terminal UI and `fm log` show what they record. A body that
+opens a pull request might end with:
 
 ```text
-┌────────────────────┐
-│      Build ✓       │
-└──────────┬─────────┘
-           ┃
-           ▼
-┌────────────────────┐
-│      Check ▶       │──▲ Build (first failure)
-│                    │──▼ Write the report (second failure)
-└──────────┬─────────┘
-           │
-           ▼
-┌────────────────────┐
-│      Review ·      │──▼ Write the report (no review)
-└──────────┬─────────┘
+fm note "Opened the review" --link "PR=https://github.com/org/app/pull/42"
+fm message "Reviewed 3 files; one question for you in the PR."
 ```
 
-That is part of [`fixtures/plans/exits.mmd`](fixtures/plans/exits.mmd), mid-run.
-A taken arrow is drawn heavy (`┃`, `━━▲`). SVG output is never affected.
+[docs/CLI.md](docs/CLI.md#inside-a-run) lists their flags and exit codes.
 
-## State
+## The terminal UI
 
-```json
-{
-  "nodes": {"start": "done", "check": "done", "ship": "active", "fix": "skipped"},
-  "taken": [["start", "check"], ["check", "ship"]]
-}
+`fm` with no command opens it; `fm tui --fake` opens it on demo data.
+
+The list page has five sections: Needs you, Running now, Coming up, Watching, and Off and
+disabled. `enter` opens an automation page with what it does, its last run and every action. A
+run page shows one run, with its steps or flowchart, live output, notes and message.
+
+| Key | Does |
+|---|---|
+| `↑` `↓`, `j` `k` | Move. `PgUp` `PgDn` `Home` `End` move or scroll further. |
+| `enter` | Open the automation page. |
+| `r` | Run it now. |
+| `x` | Stop its run. It asks first. |
+| `s`, `l` | Show its run; its runs. Both open the run page. |
+| `space` | Arm an `off` automation after the consent preview, enable a `disabled` one, disable an armed user automation, or disarm an armed repository automation. |
+| `p` | Pause or resume its watch. |
+| `e` | Edit `AUTOMATION.md` in `$VISUAL` or `$EDITOR`. |
+| `a` | Choose its agent CLI. |
+| `c` | The check page: every technical detail. |
+| `g` | On a run page: the flowchart, or back to the steps. |
+| `o` | On a run page: open a link the run published. |
+| `y` | Yes, when asked. In the consent preview, only `y` arms. |
+| `R` | Read everything again. |
+| `?` | Every key. |
+| `esc`, `q` | `esc` goes back; `q` closes. |
+
+`FM_THEME=light` or `dark` picks colours when the terminal does not say; `FM_ASCII=1` draws with
+ASCII only; `NO_COLOR` turns colour off.
+
+## Agent CLIs
+
+| CLI | Name in fm | Invocation (prompt on stdin) | Resume | Tool approval flag |
+|---|---|---|---|---|
+| pi | `pi` | `pi -p --mode json` | `--session <id>` | none: pi never asks |
+| GitHub Copilot CLI | `copilot` | `copilot --output-format json` | `--resume=<id>` | `--allow-all-tools` |
+| Claude Code | `claude` | `claude -p --output-format stream-json --verbose` | `--resume <id>` | `--dangerously-skip-permissions` |
+| Codex CLI | `codex` | `codex exec --json --skip-git-repo-check -` | `exec resume <id> -` | `--sandbox workspace-write` |
+| Gemini CLI | `gemini` | `gemini --output-format stream-json` | `--resume <id>` | `--approval-mode yolo` |
+| OpenCode | `opencode` | `opencode run --format json` | `--session <id>` | `--auto` |
+
+fm adds the tool approval flag only when you set `allow-all-tools = true` under `[agents.<cli>]` in
+`config.toml`. Prompt hooks continue the body's session through the resume flag. fm refuses a
+model the CLI cannot serve and never picks another. [docs/AGENTS.md](docs/AGENTS.md) has the model
+flags, the versions checked and each CLI's limits.
+
+## Drawing flowcharts
+
+`fm render` draws any Mermaid flowchart with node statuses, as text or SVG, for tools that track
+progress through a chart:
+
+```sh
+fm render --plan fixtures/plans/branch.mmd --state state.json
 ```
 
-- `nodes` maps a node id to a status. A node that is not listed is `pending`.
-- `taken` lists arrows, as `[from, to]` pairs, to highlight.
+[docs/RENDER.md](docs/RENDER.md) has the options, the state JSON, the statuses and the Mermaid
+fm supports.
 
-Both fields are optional, and fm ignores unknown fields. A node id, status or
-arrow that the flowchart does not have is an error.
+## fm and pi-automations
 
-| Status | Glyph |
+pi-automations (`pa`) is another host for the same format, built into the pi coding agent. `fm`
+keeps its own consent and state, so arming an automation in one host does not arm it in the other.
+
+Both read `~/.agents/automations/` and `.agents/automations/`, so you can arm the same automation
+in both, and then both run it. `fm` reads pi-automations' `trust.json` without writing to it
+(`$PI_AGENT_DIR/pi-automations/trust.json`, by default `~/.pi/agent/pi-automations/trust.json`) and
+warns when an automation is armed there too:
+
+```text
+  watch-inbox       armed     watch 5m      check now   copilot
+    ! also armed in pa — it would run twice; pa disarm watch-inbox
+```
+
+`fm list`, `fm check`, the consent preview and the UI all show this warning. Disarm the automation
+in one host.
+
+`fm` reads only the folders the specification names, so it skips pi-automations'
+`~/.pi/agent/automations/` and `.pi/automations/`. Its settings live in `config.toml`
+([docs/CONFIG.md](docs/CONFIG.md)) instead of pi-automations' `config.json`, and some defaults
+differ.
+
+## Where state lives
+
+fm keeps consent (`trust.json`), `state.json`, `config.toml`, run records (`runs/`), locks,
+progress and agent output (`sessions/`) in one state folder outside any repository. `FM_HOME` sets
+it; otherwise:
+
+| OS | State folder |
 |---|---|
-| `pending` | `·` |
-| `active` | `▶` |
-| `waiting` | `⏸` |
-| `done` | `✓` |
-| `failed` | `✗` |
-| `skipped` | `↷` |
-| `interrupted` | `‼` |
+| Windows | `%LOCALAPPDATA%\agent-automations` |
+| macOS | `~/Library/Application Support/agent-automations` |
+| Linux | `$XDG_STATE_HOME/agent-automations`, else `~/.local/state/agent-automations` |
 
-## Supported Mermaid
+Automations live in `~/.agents/automations/` (user scope) and in a repository's
+`.agents/automations/` (repository scope). `fm` finds the home folder from `USERPROFILE` on Windows
+and `HOME` elsewhere.
 
-A flowchart subset: `flowchart`/`graph` with a direction, the common node
-shapes, eight arrow types, arrow labels, chains, subgraphs, cycles and `%%`
-comments. fm rejects styling directives (`classDef`, `class`, `style`,
-`linkStyle`, `click`) because it uses them to draw statuses, and reports
-anything else it does not support with its `line:col`.
-[docs/SUPPORTED_MERMAID.md](docs/SUPPORTED_MERMAID.md) has the details.
+## Docs
 
-## Exit codes
-
-| Code | Meaning |
-|---|---|
-| `0` | Success. |
-| `1` | Reading, writing or rendering failed. |
-| `2` | Bad arguments, flowchart or state. Retrying with the same input fails the same way. |
-
-stdout carries only the rendering; errors go to stderr as `fm: <message>`.
+- [The specification](https://github.com/lucas-stanford/agent-automations), and the copy fm tests
+  against in [tests/spec](tests/spec): validation messages, watch scripts, flowcharts, and adding
+  support to a host.
+- [docs/INSTALL.md](docs/INSTALL.md): installing `fm`.
+- [docs/RENDER.md](docs/RENDER.md): `fm render`, the flowchart renderer.
+- [docs/CLI.md](docs/CLI.md): every command, flag, exit code and JSON output.
+- [docs/CONFIG.md](docs/CONFIG.md): every `config.toml` key.
+- [docs/AGENTS.md](docs/AGENTS.md): how fm runs each agent CLI.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how `fm` is built.
 
 ## License
 
-MIT; see [LICENSE](LICENSE). [merman](https://github.com/Latias94/merman) does the rendering.
-
+MIT; see [LICENSE](LICENSE). [merman](https://github.com/Latias94/merman) does the drawing.
 Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Thanks
