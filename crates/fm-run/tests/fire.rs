@@ -1203,6 +1203,18 @@ fn a_node_runs_its_own_section_through_its_own_agent_and_answers() {
         handoff: Some("The fix is in src/parse.rs, lines 40-52.".into()),
         cwd: None,
     };
+    // The body is on `read` when it hands `review` over, without moving there itself.
+    fm_state::progress_step(
+        &h.paths,
+        Some(&run),
+        &fm_state::StepArgs {
+            node: "read".into(),
+            status: None,
+            text: None,
+        },
+        Utc::now(),
+    )
+    .unwrap();
     let answer = fm_run::node::run_node(&deps, &run, &req, Utc::now).unwrap();
     assert_eq!(
         answer.answer.trim(),
@@ -1252,6 +1264,11 @@ fn a_node_runs_its_own_section_through_its_own_agent_and_answers() {
         })
         .collect();
     assert_eq!(said[0], "handed to pi (openai/gpt-5:high)");
+    // Handing it over moved the run along the arrow, as `fm next` would.
+    assert_eq!(s.node("read").unwrap().status, StepStatus::Done);
+    assert!(s.history.iter().any(|e| matches!(e,
+        fm_model::HistoryEntry::Next { from, to, text, .. }
+            if from == "read" && to == "review" && text.as_deref() == Some("handed to pi"))));
     assert!(said[1].starts_with("pi answered: One problem"), "{said:?}");
     assert_eq!(s.node("review").unwrap().status, StepStatus::Active);
 }

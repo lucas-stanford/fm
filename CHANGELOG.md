@@ -31,6 +31,8 @@ First public release.
   timeout. fm checks each node can run here, shows its agent and command in the consent preview,
   tells the body which steps to hand over, and runs one with `fm node <id>`: the step's section, the
   run's input and the body's handoff, through the node's agent, answering on stdout.
+- `fm node` moves the run to the step it hands over, from the one step going, as `fm next` would,
+  so the step before ends `done` and the move is in the run's history.
 - `fm validate <AUTOMATION.md|folder>` checks one file as the specification says, without a state
   folder or discovery: `<name>: valid`, or the first refusal.
 
