@@ -1312,3 +1312,27 @@ fn a_node_is_refused_for_a_step_the_chart_lacks_and_stopped_once_the_run_is_out_
         ))
     );
 }
+
+#[test]
+fn the_step_a_body_finishes_on_is_done_not_interrupted() {
+    let h = host();
+    let body = format!("# Verify\n\n```mermaid\n{CHART}```\n\nVerify it.");
+    let l = h.automation("verify-last", &hooks_front(&[], &[]), &body, &[]);
+    h.arm(&l);
+    let fixture = h.answer("done", "verdict: works", "s-last");
+    let rec = fire(
+        &l,
+        manual(),
+        &h.deps(&[
+            arg("fixture", &fixture),
+            "--fm-run-progress=step|read".into(),
+            // The agent moves on to `draft` and answers without marking it done.
+            "--fm-run-progress=next|draft|--from|read|-m|no browser needed".into(),
+        ]),
+    )
+    .unwrap();
+    assert_eq!(rec.outcome, Outcome::Ok, "{rec:?}");
+    let status = |id: &str| rec.steps.iter().find(|s| s.id == id).unwrap().status;
+    assert_eq!(status("read"), StepStatus::Done);
+    assert_eq!(status("draft"), StepStatus::Done);
+}
