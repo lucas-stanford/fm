@@ -9,15 +9,18 @@ use fm_model::{HistoryEntry, RunLink, RunNote, StepStatus};
 use fm_state::progress::{SETTABLE, strip_controls};
 use fm_state::{
     Env, LinkedArgs, NextArgs, Os, ProgressCode, ProgressError, ProgressNode, ProgressResult,
-    ProgressSnapshot, SayArgs, StepArgs, progress_message, progress_next, progress_note,
-    progress_say, progress_status, progress_step, state_dir,
+    ProgressSnapshot, SayArgs, StepArgs, TaskArgs, TasksArgs, progress_message, progress_next,
+    progress_note, progress_say, progress_status, progress_step, progress_task, progress_tasks,
+    state_dir,
 };
 use serde::Serialize;
 
 use crate::tracker::{ENV_NODE, ENV_RUN, ENV_STATE_DIR};
 
 /// The verbs that work inside a run.
-pub const IN_RUN_VERBS: [&str; 6] = ["step", "next", "say", "note", "message", "status"];
+pub const IN_RUN_VERBS: [&str; 8] = [
+    "step", "next", "say", "tasks", "task", "note", "message", "status",
+];
 
 /// Exit codes.
 pub const EXIT_OK: i32 = 0;
@@ -142,6 +145,8 @@ struct NodeJson<'a> {
     started_at: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     ended_at: Option<&'a str>,
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    tasks: &'a [fm_model::RunTask],
 }
 
 fn node_json(n: &ProgressNode) -> NodeJson<'_> {
@@ -152,6 +157,7 @@ fn node_json(n: &ProgressNode) -> NodeJson<'_> {
         text: n.text.as_deref(),
         started_at: n.started_at.as_deref(),
         ended_at: n.ended_at.as_deref(),
+        tasks: &n.tasks,
     }
 }
 
@@ -274,6 +280,14 @@ pub fn status_lines(s: &ProgressSnapshot) -> Vec<String> {
             pad(status_name(n.status), 8)
         );
         out.push(line.trim_end().to_string());
+        for (i, t) in n.tasks.iter().enumerate() {
+            out.push(format!(
+                "    {} {} {}",
+                glyph(t.status),
+                i + 1,
+                strip_controls(&t.title, false)
+            ));
+        }
     }
     if !s.taken.is_empty() {
         let arrows: Vec<String> = s
@@ -400,6 +414,93 @@ fn run_verb(
                     .unwrap_or_default(),
                 unchanged(&r, "unchanged")
             );
+            Ok(Done::Write(Box::new(r), human))
+        }
+        "tasks" => {
+            let tasks: Vec<String> = p.words.get(1..).unwrap_or_default().to_vec();
+            if tasks.is_empty() {
+                return Err(usage(
+                    "usage: fm tasks \"first task\" \"second task\" … [--node <step>]",
+                ));
+            }
+            let r = progress_tasks(
+                paths,
+                run_id,
+                &TasksArgs {
+                    tasks,
+                    node: p.node.clone(),
+                    env_node,
+                },
+                now,
+            )?;
+            let human = match &r.node {
+                Some(n) => format!(
+                    "{} has {} task{}{}",
+                    n.id,
+                    n.tasks.len(),
+                    if n.tasks.len() == 1 { "" } else { "s" },
+                    unchanged(&r, "unchanged")
+                ),
+                None => String::new(),
+            };
+            Ok(Done::Write(Box::new(r), human))
+        }
+        "task" => {
+            let task = match (p.words.get(1), p.words.len()) {
+                (Some(t), 2) => t.clone(),
+                _ => {
+                    return Err(usage(
+                        "usage: fm task <n|title> [--status active|waiting|done|failed|skipped] [-m \"text\"] [--node <step>]",
+                    ));
+                }
+            };
+            let status = match &p.status {
+                None => None,
+                Some(s) => Some(
+                    SETTABLE
+                        .iter()
+                        .copied()
+                        .find(|st| status_name(*st) == s)
+                        .ok_or_else(|| {
+                            let names: Vec<&str> =
+                                SETTABLE.iter().map(|s| status_name(*s)).collect();
+                            usage(format!("--status must be one of {}", names.join("|")))
+                        })?,
+                ),
+            };
+            let r = progress_task(
+                paths,
+                run_id,
+                &TaskArgs {
+                    task: task.clone(),
+                    status,
+                    text: p.message.clone(),
+                    node: p.node.clone(),
+                    env_node,
+                },
+                now,
+            )?;
+            let human = match &r.node {
+                Some(n) => {
+                    let t = n
+                        .tasks
+                        .iter()
+                        .find(|t| t.title.eq_ignore_ascii_case(&task))
+                        .or_else(|| {
+                            task.parse::<usize>()
+                                .ok()
+                                .and_then(|i| n.tasks.get(i.wrapping_sub(1)))
+                        });
+                    format!(
+                        "{} › {} {}{}",
+                        n.id,
+                        t.map(|t| t.title.as_str()).unwrap_or(task.as_str()),
+                        t.map(|t| status_name(t.status)).unwrap_or(""),
+                        unchanged(&r, "unchanged")
+                    )
+                }
+                None => String::new(),
+            };
             Ok(Done::Write(Box::new(r), human))
         }
         "say" => {
@@ -590,6 +691,11 @@ pub fn in_run_help_lines() -> Vec<String> {
         ),
         "fm say <text> [--node <node>] [--request-id <key>]".into(),
         format!("{pad}add an update to a node; a request id makes a retry a no-op"),
+        "fm tasks <title>… [--node <step>]".into(),
+        format!("{pad}break a step into tasks, in order; again replaces the list"),
+        "fm task <n|title> [--status active|waiting|done|failed|skipped] [-m text] [--node <step>]"
+            .into(),
+        format!("{pad}start one task (by default), or finish, fail or skip it"),
         "fm note <text> [--link \"label=https://…\"]… [--request-id <key>]".into(),
         format!("{pad}a note on the run's record, with the links it published"),
         "fm message <text> [--link \"label=https://…\"]… [--request-id <key>]".into(),

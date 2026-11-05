@@ -51,6 +51,7 @@ mod tests {
                 text: None,
                 started_at: None,
                 ended_at: None,
+                tasks: Vec::new(),
             }],
             taken: vec![("a".into(), "b".into())],
             notes: vec![],

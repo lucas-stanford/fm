@@ -25,7 +25,9 @@ pub const EXIT_ERROR: i32 = 1;
 pub const EXIT_REFUSED: i32 = 2;
 
 /// The verbs a run uses to report progress; they skip discovery entirely.
-pub const IN_RUN_VERBS: [&str; 6] = ["step", "next", "say", "note", "message", "status"];
+pub const IN_RUN_VERBS: [&str; 8] = [
+    "step", "next", "say", "tasks", "task", "note", "message", "status",
+];
 
 const IN_RUN_HELP: &str = "\
 Inside a run (AUTOMATION_RUN is set for the body, every hook and what they start):
@@ -35,6 +37,10 @@ Inside a run (AUTOMATION_RUN is set for the body, every hook and what they start
                         finish <node> and start <to>; <node> defaults to AUTOMATION_NODE, else the one running node
   fm say <text> [--node <node>] [--request-id <key>]
                         add an update to a node; a request id makes a retry a no-op
+  fm tasks <title>… [--node <step>]
+                        break a step into tasks, in order; again replaces the list
+  fm task <n|title> [--status active|waiting|done|failed|skipped] [-m text] [--node <step>]
+                        start one task (by default), or finish, fail or skip it
   fm note <text> [--link \"label=https://…\"]… [--request-id <key>]
                         a note on the run's record, with the links it published
   fm message <text> [--link \"label=https://…\"]… [--request-id <key>]

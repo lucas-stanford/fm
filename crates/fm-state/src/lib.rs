@@ -40,9 +40,10 @@ pub use pa_trust::{PaTrust, is_armed_in_pa, pa_armed_keys, pa_trust_path};
 pub use process::{FakeProbe, ProcessProbe, ProcessState, SystemProbe, owner_alive};
 pub use progress::{
     ChartNode, LinkedArgs, NextArgs, OpenArgs, ProgressCode, ProgressError, ProgressNode,
-    ProgressResult, ProgressSnapshot, SayArgs, StepArgs, close_progress, fold_abandoned,
-    open_progress, progress_message, progress_next, progress_note, progress_of, progress_say,
-    progress_status, progress_step, read_progress, with_progress,
+    ProgressResult, ProgressSnapshot, SayArgs, StepArgs, TaskArgs, TasksArgs, close_progress,
+    fold_abandoned, open_progress, progress_message, progress_next, progress_note, progress_of,
+    progress_say, progress_status, progress_step, progress_task, progress_tasks, read_progress,
+    with_progress,
 };
 pub use records::{append_record, last_record, new_run_id, read_records, rotate_if_needed};
 pub use state::{StateFileExt, StateStore};

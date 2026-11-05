@@ -37,6 +37,8 @@ pub fn progress_guide(chart: &str, strict: bool) -> String {
         "- `fm step <node> [-m \"text\"] [--status active|waiting|done|failed|skipped]` — set one node (default active)",
         "- `fm next <to> --from <node> [-m \"text\"]` — finish <node> and start <to>",
         "- `fm say \"text\" [--node <node>]` — add an update to a node",
+        "- `fm tasks \"first\" \"second\" … [--node <step>]` — break a step into its tasks, in order",
+        "- `fm task <n> [--status done|failed|skipped] [-m \"text\"]` — start task n (by default), or finish it",
         "- `fm note \"text\" --link \"label=https://…\"` — a note on the run's record, with the links you published",
         "- `fm status` — where the run is; any command takes `--json`",
         &nodes,
@@ -46,6 +48,9 @@ pub fn progress_guide(chart: &str, strict: bool) -> String {
             "Each `##` section is one step: start it with `fm next <id> --from <the step before>`, following the chart's arrows.",
         );
     }
+    lines.push(
+        "Break a step that takes more than a few minutes into its tasks before you start them, and mark each as it starts and ends: the run's flowchart shows them.",
+    );
     lines.extend([
         "Subagents inherit AUTOMATION_RUN; set AUTOMATION_NODE=<its node> for each so its `fm say`/`fm next` land there.",
         RECEIPTS_LINE,

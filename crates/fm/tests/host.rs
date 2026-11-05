@@ -317,6 +317,7 @@ fn render_chart_draws_in_process() {
             text: None,
             started_at: None,
             ended_at: None,
+            tasks: Vec::new(),
         }],
         taken: vec![],
         notes: vec![],

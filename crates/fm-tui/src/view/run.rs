@@ -38,6 +38,35 @@ fn status_name(s: StepStatus) -> &'static str {
 }
 
 /// Steps in order, each with its glyph and latest update.
+/// A step's tasks, one line each under it, numbered as planned.
+fn task_lines(app: &App, step: &RunStep, w: usize) -> Vec<Line<'static>> {
+    let ell = app.glyphs.ellipsis;
+    step.tasks
+        .iter()
+        .enumerate()
+        .map(|(i, t)| {
+            let label_style = if t.status == StepStatus::Pending {
+                app.theme.fg(UiColor::Muted)
+            } else {
+                app.theme.fg(UiColor::Text)
+            };
+            Line::from(vec![
+                Span::raw("        "),
+                colored(app.glyphs.step_tree(t.status), step_color(t.status), app),
+                Span::raw(" "),
+                Span::styled(
+                    ellipsize(
+                        &format!("{}. {}", i + 1, t.title),
+                        w.saturating_sub(10),
+                        ell,
+                    ),
+                    label_style,
+                ),
+            ])
+        })
+        .collect()
+}
+
 fn step_tree(app: &App, steps: &[RunStep], w: usize) -> Vec<Line<'static>> {
     let ell = app.glyphs.ellipsis;
     let label_w = steps
@@ -48,7 +77,7 @@ fn step_tree(app: &App, steps: &[RunStep], w: usize) -> Vec<Line<'static>> {
         .min(w / 2);
     steps
         .iter()
-        .map(|s| {
+        .flat_map(|s| {
             let mut spans = vec![
                 Span::raw("    "),
                 colored(app.glyphs.step_tree(s.status), step_color(s.status), app),
@@ -74,7 +103,9 @@ fn step_tree(app: &App, steps: &[RunStep], w: usize) -> Vec<Line<'static>> {
                     label_style,
                 )),
             }
-            Line::from(spans)
+            let mut lines = vec![Line::from(spans)];
+            lines.extend(task_lines(app, s, w));
+            lines
         })
         .collect()
 }
@@ -90,7 +121,7 @@ fn step_list(app: &App, steps: &[RunStep], w: usize) -> Vec<Line<'static>> {
         .clamp(4, 36);
     steps
         .iter()
-        .map(|s| {
+        .flat_map(|s| {
             let c = step_color(s.status);
             let mut spans = vec![
                 Span::raw("    "),
@@ -107,7 +138,9 @@ fn step_list(app: &App, steps: &[RunStep], w: usize) -> Vec<Line<'static>> {
                     spans.push(muted(format!(" · {}", ellipsize(&t, room, ell)), app));
                 }
             }
-            Line::from(spans)
+            let mut lines = vec![Line::from(spans)];
+            lines.extend(task_lines(app, s, w));
+            lines
         })
         .collect()
 }

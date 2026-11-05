@@ -238,6 +238,7 @@ fn briefing_steps(statuses: [StepStatus; 7], texts: [Option<&str>; 7]) -> Vec<Ru
             text: text.map(Into::into),
             started_at: None,
             ended_at: None,
+            tasks: Vec::new(),
         })
         .collect()
 }
@@ -338,6 +339,7 @@ impl FakeHost {
                 text: Some("npm ci: ENOENT package-lock.json".into()),
                 started_at: None,
                 ended_at: None,
+                tasks: Vec::new(),
             },
             RunStep {
                 id: "test".into(),
@@ -346,6 +348,7 @@ impl FakeHost {
                 text: None,
                 started_at: None,
                 ended_at: None,
+                tasks: Vec::new(),
             },
             RunStep {
                 id: "report".into(),
@@ -354,6 +357,7 @@ impl FakeHost {
                 text: None,
                 started_at: None,
                 ended_at: None,
+                tasks: Vec::new(),
             },
         ];
         failed.output = Some(RunOutput {

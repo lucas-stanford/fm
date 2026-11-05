@@ -170,8 +170,11 @@ pub fn node_prompt(
     parts.extend([
         String::new(),
         format!(
-            "<progress>\nReport on this step with `fm say \"text\"` (AUTOMATION_RUN and AUTOMATION_NODE={id} are \
-             already set) and record anything you publish with `fm note \"what it is\" --link \"label=https://…\"`. \
+            "<progress>\nFirst break this step into its tasks, in order: `fm tasks \"first\" \"second\" …`. Mark each \
+             one as you go: `fm task <n>` when you start it, `fm task <n> --status done` (or failed, or skipped) \
+             when it ends; the run's flowchart shows them. Report on the step with `fm say \"text\"` \
+             (AUTOMATION_RUN and AUTOMATION_NODE={id} are already set) and record anything you publish with \
+             `fm note \"what it is\" --link \"label=https://…\"`. \
              Do not run `fm next` or `fm step`: the main agent decides where the run goes after this step. \
              If `fm` fails, carry on.\n</progress>"
         ),
