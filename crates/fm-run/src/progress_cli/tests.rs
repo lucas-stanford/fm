@@ -517,3 +517,98 @@ fn status_as_markdown_shows_the_chart_the_steps_and_every_decision() {
     );
     assert_eq!(cli(&["status", "--format", "html"], &env).code, 1);
 }
+
+#[test]
+fn a_steps_tasks_show_in_the_chart_the_table_and_the_timeline() {
+    let o = opened_with(CHART, true);
+    let env = o.env();
+    for args in [
+        &["next", "body", "--from", "pre0"][..],
+        &["next", "read", "--from", "body"],
+        &[
+            "tasks",
+            "Read the steps",
+            "Try them \"twice\"",
+            "Note what broke",
+            "--node",
+            "read",
+        ],
+        &["task", "1", "--status", "done", "--node", "read"],
+        &["task", "2", "--node", "read", "-m", "second try now"],
+    ] {
+        assert_eq!(cli(args, &env).code, 0, "{args:?}");
+    }
+    let bad = cli(&["task", "7", "--node", "read"], &env);
+    assert_eq!(bad.code, 2, "{bad:?}");
+    assert!(
+        bad.stderr.contains("did you mean: 1 Read the steps"),
+        "{bad:?}"
+    );
+
+    let page = cli(&["status", "--format", "markdown"], &env).stdout;
+    // The chart: the tasks in a box beside their step, coloured by status, quotes made safe.
+    assert!(
+        page.contains("  subgraph read__tasks[\"3 tasks\"]"),
+        "{page}"
+    );
+    assert!(
+        page.contains("    read__t2[\"2. Try them 'twice'\"]"),
+        "{page}"
+    );
+    assert!(page.contains("  read -.- read__t1"), "{page}");
+    assert!(
+        page.lines().any(|l| l.trim_start().starts_with("class ")
+            && l.contains("read__t1")
+            && l.ends_with("fm_done")),
+        "{page}"
+    );
+    assert!(
+        page.lines().any(|l| l.trim_start().starts_with("class ")
+            && l.contains("read__t2")
+            && l.ends_with("fm_active")),
+        "{page}"
+    );
+    // The table: one row per task under its step.
+    assert!(
+        page.contains("| ✅ | &nbsp;&nbsp;↳ 1. Read the steps |  |"),
+        "{page}"
+    );
+    assert!(
+        page.contains("| ⏳ | &nbsp;&nbsp;↳ 2. Try them \"twice\" | 0s so far |"),
+        "{page}"
+    );
+    assert!(
+        page.contains("| ⬜ | &nbsp;&nbsp;↳ 3. Note what broke |  |"),
+        "{page}"
+    );
+    // The timeline.
+    assert!(page.contains("Read the issue: broken into 3 tasks — Read the steps · Try them \"twice\" · Note what broke"), "{page}");
+    assert!(
+        page.contains("⏳ Read the issue › Try them \"twice\": active — second try now"),
+        "{page}"
+    );
+
+    // The same chart, as the terminal draws it.
+    let s = progress_status(&o.paths, Some(&o.run)).unwrap();
+    let (plan, tasks) = crate::markdown::chart_with_tasks(
+        &s.chart,
+        s.nodes.iter().map(|n| (n.id.as_str(), n.tasks.as_slice())),
+    );
+    let mut nodes: serde_json::Map<String, Value> = s
+        .nodes
+        .iter()
+        .map(|n| (n.id.clone(), serde_json::to_value(n.status).unwrap()))
+        .collect();
+    nodes.extend(
+        tasks
+            .into_iter()
+            .map(|(id, st)| (id, serde_json::to_value(st).unwrap())),
+    );
+    let text =
+        fm_render::render_text(&plan, &serde_json::json!({ "nodes": nodes }).to_string()).unwrap();
+    assert!(text.contains("1. Read the steps"), "{text}");
+
+    // And plain `fm status`.
+    let plain = cli(&["status"], &env).stdout;
+    assert!(plain.contains("    ✓ 1 Read the steps"), "{plain}");
+}

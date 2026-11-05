@@ -4,7 +4,7 @@
 //! arrow taken, with why), what it published and its message.
 
 use chrono::{DateTime, Utc};
-use fm_model::{HistoryEntry, RunLink, StepStatus};
+use fm_model::{HistoryEntry, RunLink, RunTask, StepStatus};
 use fm_state::progress::{ProgressNode, ProgressSnapshot};
 
 /// One timeline entry's text is cut here; a page is long enough without an essay per line.
@@ -79,6 +79,67 @@ fn with_links(text: &str, list: &[RunLink]) -> String {
     }
 }
 
+/// A task node's id under its step: `build__t2`. Ids are letters, digits, `-` and `_`.
+pub fn task_node_id(step: &str, index: usize) -> String {
+    format!("{step}__t{}", index + 1)
+}
+
+/// A task title as a quoted Mermaid label: no quotes, no `#` (an entity in Mermaid), one line.
+fn task_label(index: usize, title: &str) -> String {
+    let flat = one_line(title, 60).replace('"', "'").replace('#', "No. ");
+    format!("{}. {flat}", index + 1)
+}
+
+/// The chart with each step's tasks drawn beside it: a box of task nodes, in the order planned,
+/// hung off the step by a dotted line. The author's lines come first and unchanged, so the
+/// arrows keep their `linkStyle` numbers. Also each task node's status, for the state.
+pub fn chart_with_tasks<'a>(
+    chart: &str,
+    steps: impl IntoIterator<Item = (&'a str, &'a [RunTask])>,
+) -> (String, Vec<(String, StepStatus)>) {
+    let mut lines = vec![chart.trim_end().to_string()];
+    let mut statuses = Vec::new();
+    for (step, tasks) in steps {
+        if tasks.is_empty() {
+            continue;
+        }
+        let ids: Vec<String> = (0..tasks.len()).map(|i| task_node_id(step, i)).collect();
+        lines.push(format!(
+            "  subgraph {step}__tasks[\"{} tasks\"]",
+            tasks.len()
+        ));
+        lines.push("    direction TB".to_string());
+        for (i, t) in tasks.iter().enumerate() {
+            lines.push(format!("    {}[\"{}\"]", ids[i], task_label(i, &t.title)));
+            statuses.push((ids[i].clone(), t.status));
+        }
+        for pair in ids.windows(2) {
+            lines.push(format!("    {} -.- {}", pair[0], pair[1]));
+        }
+        lines.push("  end".to_string());
+        lines.push(format!("  {step} -.- {}", ids[0]));
+    }
+    (lines.join("\n") + "\n", statuses)
+}
+
+fn span_cell(
+    status: StepStatus,
+    started: Option<&str>,
+    ended: Option<&str>,
+    now: DateTime<Utc>,
+) -> String {
+    let start = started.and_then(parse_at);
+    let end = ended.and_then(parse_at);
+    match (status, start, end) {
+        (StepStatus::Skipped, ..) => "skipped".to_string(),
+        (StepStatus::Active | StepStatus::Waiting, Some(s), _) => {
+            format!("{} so far", took((now - s).num_seconds()))
+        }
+        (_, Some(s), Some(e)) => took((e - s).num_seconds()),
+        _ => String::new(),
+    }
+}
+
 fn time_cell(n: &ProgressNode, passes: usize, now: DateTime<Utc>) -> String {
     let start = n.started_at.as_deref().and_then(parse_at);
     let end = n.ended_at.as_deref().and_then(parse_at);
@@ -123,19 +184,21 @@ pub fn status_markdown(s: &ProgressSnapshot, now: DateTime<Utc>) -> String {
         String::new(),
     ];
 
-    // The same state `fm render --state` reads. A chart fm cannot draw leaves the block out.
+    // The same state `fm render --state` reads, with each step's tasks drawn beside it. A chart fm
+    // cannot draw leaves the block out.
+    let (plan, task_states) = chart_with_tasks(
+        &s.chart,
+        s.nodes.iter().map(|n| (n.id.as_str(), n.tasks.as_slice())),
+    );
     let nodes: serde_json::Map<String, serde_json::Value> = s
         .nodes
         .iter()
-        .map(|n| {
-            (
-                n.id.clone(),
-                serde_json::to_value(n.status).unwrap_or_default(),
-            )
-        })
+        .map(|n| (n.id.clone(), n.status))
+        .chain(task_states)
+        .map(|(id, st)| (id, serde_json::to_value(st).unwrap_or_default()))
         .collect();
     let chart_state = serde_json::json!({ "nodes": nodes, "taken": s.taken });
-    if let Ok(block) = fm_render::render_markdown(&s.chart, &chart_state.to_string()) {
+    if let Ok(block) = fm_render::render_markdown(&plan, &chart_state.to_string()) {
         head.push(block.trim_end().to_string());
         head.push(String::new());
     }
@@ -158,6 +221,20 @@ pub fn status_markdown(s: &ProgressSnapshot, now: DateTime<Utc>) -> String {
             icon(n.status),
             time_cell(n, passes, now)
         ));
+        for (i, t) in n.tasks.iter().enumerate() {
+            head.push(format!(
+                "| {} | &nbsp;&nbsp;↳ {}. {} | {} |",
+                icon(t.status),
+                i + 1,
+                cell(&t.title),
+                span_cell(
+                    t.status,
+                    t.started_at.as_deref(),
+                    t.ended_at.as_deref(),
+                    now
+                )
+            ));
+        }
     }
 
     let timeline: Vec<String> = s
@@ -195,11 +272,49 @@ pub fn status_markdown(s: &ProgressSnapshot, now: DateTime<Utc>) -> String {
                 )
             }
             HistoryEntry::Say { at, node, text } => {
+                // A hook's output is its whole input block; its first line says what it is.
+                let hook = fm_spec::is_reserved_node(node);
+                let text = if hook {
+                    text.lines()
+                        .find(|l| !l.trim().is_empty())
+                        .unwrap_or_default()
+                } else {
+                    text.as_str()
+                };
+                let max = if hook { 200 } else { ENTRY_MAX };
                 format!(
                     "- {} · {}: {}",
                     clock(at),
                     cell(&label(node)),
-                    one_line(text, ENTRY_MAX)
+                    one_line(text, max)
+                )
+            }
+            HistoryEntry::Tasks { at, node, tasks } => format!(
+                "- {} · {}: broken into {} task{} — {}",
+                clock(at),
+                cell(&label(node)),
+                tasks.len(),
+                if tasks.len() == 1 { "" } else { "s" },
+                one_line(&tasks.join(" · "), ENTRY_MAX)
+            ),
+            HistoryEntry::Task {
+                at,
+                node,
+                task,
+                status,
+                text,
+            } => {
+                let t = text
+                    .as_deref()
+                    .map(|t| format!(" — {}", one_line(t, ENTRY_MAX)))
+                    .unwrap_or_default();
+                format!(
+                    "- {} · {} {} › {}: {}{t}",
+                    clock(at),
+                    icon(*status),
+                    cell(&label(node)),
+                    cell(task),
+                    status_word(*status)
                 )
             }
             HistoryEntry::Note { at, text, links } => {

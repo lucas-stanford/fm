@@ -325,6 +325,8 @@ skip discovery, so they answer fast from any folder.
 | `fm step <node> [--status active\|waiting\|done\|failed\|skipped] [-m text]` | Sets one node. `active` by default. |
 | `fm next <to> [--from <node>] [-m text]` | Finishes `<node>` and starts `<to>`: a decision, and `-m` says why. `--from` defaults to `AUTOMATION_NODE`, else the one running node. In a `flow: strict` run, the move must follow an arrow of the flowchart. |
 | `fm say <text> [--node <node>] [--request-id <key>]` | Adds an update to a node. |
+| `fm tasks <title>… [--node <step>]` | Breaks a step into tasks, in order, shown under it on the flowchart. Again replaces the list, keeping how far each task with the same title got. At most 30. |
+| `fm task <n\|title> [--status active\|waiting\|done\|failed\|skipped] [-m text] [--node <step>]` | Starts one task (by default), or finishes, fails, skips or parks it. Name it by its number from 1 or its title. A step that ends takes the tasks still going with it. |
 | `fm note <text> [--link "label=https://…"]… [--request-id <key>]` | A note on the run record, with the links it published. |
 | `fm message <text> [--link "label=https://…"]… [--request-id <key>]` | The run's one message for its reader. The last one wins. |
 | `fm node <id> [-m text \| --file path] [--cwd dir] [--json]` | Hands a step to its own agent, as `nodes:` says (a step it does not list runs on the body's agent), and prints the agent's answer. The step gets its section, the text before the first section, what `-m` or `--file` hands over and the run's input; it runs in the body's folder or `--cwd`, within what is left of the run's timeout. Exits 0 answered, 2 refused (not a step, no section, not inside a body), 20 the agent did not answer, 30 stopped or out of time. |
@@ -337,7 +339,7 @@ takes `--json`, and `--run <id>` to name a run when `AUTOMATION_RUN` is not set.
 
 They exit 0 when they made the change, 1 for a usage error (`USAGE`) or a link that is not `http`
 or `https` (`BAD_LINK`), and 2 when refused: `NO_RUN`, `UNKNOWN_RUN`, `RUN_CLOSED`, `NO_CHART`,
-`UNKNOWN_NODE`, `AMBIGUOUS_NODE`, `NO_ACTIVE`, `AMBIGUOUS_ACTIVE`, `NOT_AN_EDGE`, `LOCK_TIMEOUT`,
+`UNKNOWN_NODE`, `UNKNOWN_TASK`, `AMBIGUOUS_NODE`, `NO_ACTIVE`, `AMBIGUOUS_ACTIVE`, `NOT_AN_EDGE`, `LOCK_TIMEOUT`,
 `IO`. These codes mean what they mean in pi-automations'
 [reporting](https://lucas-stanford.github.io/agent-automations/reporting.html#retries-and-exit-codes).
 

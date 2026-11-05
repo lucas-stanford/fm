@@ -31,6 +31,11 @@ First public release.
   timeout. fm checks each node can run here, shows its agent and command in the consent preview,
   tells the body which steps to hand over, and runs one with `fm node <id>`: the step's section, the
   run's input and the body's handoff, through the node's agent, answering on stdout.
+- A step can be broken into tasks: `fm tasks "…" "…" [--node <step>]` plans them and
+  `fm task <n> [--status done]` moves one. The flowchart (in the terminal and in
+  `fm status --format markdown`) draws each step's tasks beside it, the page's table lists them
+  with their times, and the history keeps every change. A node's agent is asked to break its step
+  into tasks. In the page's timeline, a hook's output is its first line.
 - When the body answers, the step it was on is `done`; it used to end `interrupted` unless the
   agent marked it done itself.
 - `fm node` moves the run to the step it hands over, from the one step going, as `fm next` would,

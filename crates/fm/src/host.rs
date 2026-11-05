@@ -964,7 +964,18 @@ impl Host for RealHost {
         progress: Option<&RunProgress>,
         width: u16,
     ) -> Result<String, String> {
-        let text = fm::render(chart, &fm::ChartState::of(progress))?;
+        // Each step's tasks, drawn beside it as the issue page draws them.
+        let (plan, tasks) = fm_run::markdown::chart_with_tasks(
+            chart,
+            progress
+                .map(|p| p.steps.as_slice())
+                .unwrap_or_default()
+                .iter()
+                .map(|s| (s.id.as_str(), s.tasks.as_slice())),
+        );
+        let mut state = fm::ChartState::of(progress);
+        state.nodes.extend(tasks);
+        let text = fm::render(&plan, &state)?;
         let need = fm::width_of(&text);
         if need > usize::from(width) {
             return Err(format!(

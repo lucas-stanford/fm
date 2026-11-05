@@ -375,6 +375,23 @@ pub struct RunStep {
     pub started_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ended_at: Option<String>,
+    /// What the step was broken into, in the order planned (`tasks`), and how far each got.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tasks: Vec<RunTask>,
+}
+
+/// One task inside a step: something the agent planned to do there.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunTask {
+    pub title: String,
+    pub status: StepStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended_at: Option<String>,
 }
 
 /// Always http or https.
@@ -419,6 +436,21 @@ pub enum HistoryEntry {
         at: String,
         node: String,
         text: String,
+    },
+    /// A step broken into tasks, or broken down again: `tasks <title>… --node <step>`.
+    Tasks {
+        at: String,
+        node: String,
+        tasks: Vec<String>,
+    },
+    /// One task started, finished or failed: `task <n|title> --status <s>`.
+    Task {
+        at: String,
+        node: String,
+        task: String,
+        status: StepStatus,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
     },
     /// Something the run published: `note <text> --link …`.
     Note {

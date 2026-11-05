@@ -14,7 +14,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Duration, Utc};
-use fm_model::{HistoryEntry, RunLink, RunNote, RunProgress, RunRecord, StatePaths, StepStatus};
+use fm_model::{
+    HistoryEntry, RunLink, RunNote, RunProgress, RunRecord, RunTask, StatePaths, StepStatus,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -71,6 +73,7 @@ pub enum ProgressCode {
     RunClosed,
     NoChart,
     UnknownNode,
+    UnknownTask,
     AmbiguousNode,
     AmbiguousActive,
     NoActive,
@@ -89,6 +92,7 @@ impl ProgressCode {
             ProgressCode::RunClosed => "RUN_CLOSED",
             ProgressCode::NoChart => "NO_CHART",
             ProgressCode::UnknownNode => "UNKNOWN_NODE",
+            ProgressCode::UnknownTask => "UNKNOWN_TASK",
             ProgressCode::AmbiguousNode => "AMBIGUOUS_NODE",
             ProgressCode::AmbiguousActive => "AMBIGUOUS_ACTIVE",
             ProgressCode::NoActive => "NO_ACTIVE",
@@ -152,6 +156,8 @@ pub struct ProgressNode {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ended_at: Option<String>,
     pub successors: Vec<String>,
+    /// What the step was broken into (`tasks`), in the order planned.
+    pub tasks: Vec<RunTask>,
 }
 
 /// Where a tracked run is now.
@@ -233,6 +239,19 @@ enum Event {
         rid: Option<String>,
         at: String,
     },
+    Tasks {
+        node: String,
+        tasks: Vec<String>,
+        at: String,
+    },
+    Task {
+        node: String,
+        task: String,
+        status: StepStatus,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+        at: String,
+    },
     Note {
         text: String,
         #[serde(default)]
@@ -308,7 +327,30 @@ fn read_events(file: &Path) -> Option<Vec<Event>> {
     )
 }
 
+fn set_task_status(task: &mut RunTask, status: StepStatus, at: &str) {
+    task.status = status;
+    if running(status) {
+        if task.started_at.is_none() {
+            task.started_at = Some(at.to_string());
+        }
+        task.ended_at = None;
+    } else if settled(status) {
+        task.ended_at = Some(at.to_string());
+    }
+}
+
+/// A step that settles takes the tasks still going with it: done with it, failed with it.
+fn settle_tasks(node: &mut ProgressNode, status: StepStatus, at: &str) {
+    if !settled(status) {
+        return;
+    }
+    for t in node.tasks.iter_mut().filter(|t| running(t.status)) {
+        set_task_status(t, status, at);
+    }
+}
+
 fn set_status(node: &mut ProgressNode, status: StepStatus, at: &str) {
+    settle_tasks(node, status, at);
     node.status = status;
     if running(status) {
         if node.started_at.is_none() {
@@ -351,6 +393,7 @@ fn fold(events: &[Event]) -> Option<ProgressSnapshot> {
                 started_at: None,
                 ended_at: None,
                 successors: n.successors.clone(),
+                tasks: Vec::new(),
             })
             .collect(),
         taken: Vec::new(),
@@ -414,6 +457,59 @@ fn fold(events: &[Event]) -> Option<ProgressSnapshot> {
                     text: text.clone(),
                 });
             }
+            Event::Tasks { node, tasks, at } => {
+                if let Some(i) = index(&snap, node) {
+                    let old = std::mem::take(&mut snap.nodes[i].tasks);
+                    snap.nodes[i].tasks = tasks
+                        .iter()
+                        .map(|title| {
+                            old.iter()
+                                .find(|t| &t.title == title)
+                                .cloned()
+                                .unwrap_or(RunTask {
+                                    title: title.clone(),
+                                    status: StepStatus::Pending,
+                                    text: None,
+                                    started_at: None,
+                                    ended_at: None,
+                                })
+                        })
+                        .collect();
+                }
+                snap.history.push(HistoryEntry::Tasks {
+                    at: at.clone(),
+                    node: node.clone(),
+                    tasks: tasks.clone(),
+                });
+            }
+            Event::Task {
+                node,
+                task,
+                status,
+                text,
+                at,
+            } => {
+                if let Some(i) = index(&snap, node) {
+                    let n = &mut snap.nodes[i];
+                    if let Some(t) = n.tasks.iter_mut().find(|t| &t.title == task) {
+                        set_task_status(t, *status, at);
+                        if let Some(text) = text {
+                            t.text = Some(text.clone());
+                        }
+                    }
+                    // Work on a task means its step is going.
+                    if running(*status) && n.status == StepStatus::Pending {
+                        set_status(n, StepStatus::Active, at);
+                    }
+                }
+                snap.history.push(HistoryEntry::Task {
+                    at: at.clone(),
+                    node: node.clone(),
+                    task: task.clone(),
+                    status: *status,
+                    text: text.clone(),
+                });
+            }
             Event::Note {
                 text, links, at, ..
             } => {
@@ -474,6 +570,7 @@ pub fn progress_of(snap: &ProgressSnapshot) -> RunProgress {
                 text: n.text.clone(),
                 started_at: n.started_at.clone(),
                 ended_at: n.ended_at.clone(),
+                tasks: n.tasks.clone(),
             })
             .collect(),
         taken: snap.taken.clone(),
@@ -988,6 +1085,196 @@ pub fn progress_say(
     })
 }
 
+/// The most tasks one step can be broken into; past it a step is a plan, not a step.
+pub const TASKS_MAX: usize = 30;
+const TASK_TITLE_MAX: usize = 120;
+
+/// `fm tasks`: what a step is broken into, in order. Again replaces the list, keeping how far each
+/// task with the same title got.
+#[derive(Debug, Clone, Default)]
+pub struct TasksArgs {
+    pub tasks: Vec<String>,
+    pub node: Option<String>,
+    pub env_node: Option<String>,
+}
+
+pub fn progress_tasks(
+    paths: &StatePaths,
+    run_id: Option<&str>,
+    args: &TasksArgs,
+    now: DateTime<Utc>,
+) -> PResult<ProgressResult> {
+    let run_id = require_run_id(run_id)?;
+    let mut titles: Vec<String> = Vec::new();
+    for raw in &args.tasks {
+        let t = strip_controls(raw, true)
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        if t.is_empty() {
+            continue;
+        }
+        let t: String = t.chars().take(TASK_TITLE_MAX).collect();
+        if titles.contains(&t) {
+            return Err(perr(
+                ProgressCode::Usage,
+                format!("two tasks are both called \"{t}\" — give each its own title"),
+            ));
+        }
+        titles.push(t);
+    }
+    if titles.is_empty() {
+        return Err(perr(
+            ProgressCode::Usage,
+            "tasks needs at least one title — fm tasks \"first task\" \"second task\" [--node <step>]",
+        ));
+    }
+    if titles.len() > TASKS_MAX {
+        return Err(perr(
+            ProgressCode::Usage,
+            format!(
+                "{} tasks is more than {TASKS_MAX} — group them",
+                titles.len()
+            ),
+        ));
+    }
+    under_lock(paths, run_id, || {
+        let mut open = load_open(paths, run_id)?;
+        require_chart(&open.snap)?;
+        let node = match &args.node {
+            Some(n) => resolve_node(&open.snap, n)?,
+            None => default_node(&open.snap, args.env_node.as_deref(), "--node")?,
+        };
+        let same = node.tasks.iter().map(|t| &t.title).eq(titles.iter());
+        if same {
+            return Ok(ProgressResult {
+                changed: false,
+                warnings: Vec::new(),
+                snapshot: open.snap,
+                node: Some(node),
+                from: None,
+            });
+        }
+        let after = commit(
+            &mut open,
+            Event::Tasks {
+                node: node.id.clone(),
+                tasks: titles,
+                at: iso(now),
+            },
+        )?;
+        Ok(ProgressResult {
+            changed: true,
+            warnings: Vec::new(),
+            node: after.node(&node.id).cloned(),
+            snapshot: after,
+            from: None,
+        })
+    })
+}
+
+/// `fm task`: one task of a step started (by default), done, failed, skipped or waiting.
+#[derive(Debug, Clone, Default)]
+pub struct TaskArgs {
+    /// Its number in the list (from 1) or its title.
+    pub task: String,
+    pub status: Option<StepStatus>,
+    pub text: Option<String>,
+    pub node: Option<String>,
+    pub env_node: Option<String>,
+}
+
+/// A task by number or by title, case aside; a miss lists them.
+fn resolve_task<'a>(node: &'a ProgressNode, reference: &str) -> PResult<&'a RunTask> {
+    let r = reference.trim();
+    let by_number = r
+        .parse::<usize>()
+        .ok()
+        .and_then(|n| n.checked_sub(1))
+        .and_then(|i| node.tasks.get(i));
+    if let Some(t) =
+        by_number.or_else(|| node.tasks.iter().find(|t| t.title.eq_ignore_ascii_case(r)))
+    {
+        return Ok(t);
+    }
+    if node.tasks.is_empty() {
+        return Err(perr(
+            ProgressCode::UnknownTask,
+            format!(
+                "{} has no tasks — list them first with fm tasks \"…\" --node {}",
+                node.id, node.id
+            ),
+        ));
+    }
+    Err(ProgressError {
+        code: ProgressCode::UnknownTask,
+        message: format!(
+            "{} has no task {r} — name one by number (1 to {}) or by title",
+            node.id,
+            node.tasks.len()
+        ),
+        suggestions: node
+            .tasks
+            .iter()
+            .enumerate()
+            .map(|(i, t)| format!("{} {}", i + 1, t.title))
+            .collect(),
+    })
+}
+
+pub fn progress_task(
+    paths: &StatePaths,
+    run_id: Option<&str>,
+    args: &TaskArgs,
+    now: DateTime<Utc>,
+) -> PResult<ProgressResult> {
+    let run_id = require_run_id(run_id)?;
+    let status = args.status.unwrap_or(StepStatus::Active);
+    if status == StepStatus::Interrupted || status == StepStatus::Pending {
+        return Err(perr(
+            ProgressCode::Usage,
+            "--status is active, waiting, done, failed or skipped",
+        ));
+    }
+    under_lock(paths, run_id, || {
+        let mut open = load_open(paths, run_id)?;
+        require_chart(&open.snap)?;
+        let node = match &args.node {
+            Some(n) => resolve_node(&open.snap, n)?,
+            None => default_node(&open.snap, args.env_node.as_deref(), "--node")?,
+        };
+        let task = resolve_task(&node, &args.task)?.clone();
+        let mut warnings = Vec::new();
+        let text = args.text.as_deref().map(|t| clamp(t, &mut warnings));
+        if task.status == status && (text.is_none() || text == task.text) {
+            return Ok(ProgressResult {
+                changed: false,
+                warnings,
+                snapshot: open.snap,
+                node: Some(node),
+                from: None,
+            });
+        }
+        let after = commit(
+            &mut open,
+            Event::Task {
+                node: node.id.clone(),
+                task: task.title,
+                status,
+                text,
+                at: iso(now),
+            },
+        )?;
+        Ok(ProgressResult {
+            changed: true,
+            warnings,
+            node: after.node(&node.id).cloned(),
+            snapshot: after,
+            from: None,
+        })
+    })
+}
+
 /// One link from the command line: `URL` or `label=URL`, split on the first `=` only when an
 /// http(s) URL follows. The parsed URL is kept, so control characters are percent-encoded.
 pub fn parse_link(raw: &str) -> PResult<RunLink> {
@@ -1298,6 +1585,125 @@ mod tests {
 
     fn revision(p: &StatePaths) -> usize {
         read_progress(p, RUN).unwrap().revision
+    }
+
+    #[test]
+    fn a_step_broken_into_tasks_keeps_each_task_and_settles_them_with_it() {
+        use StepStatus::{Active, Done, Pending};
+        let (_d, p) = open(true);
+        next(&p, "body", Some("pre0"), None).unwrap();
+        next(&p, "gather", Some("body"), None).unwrap();
+        let tasks = |list: &[&str]| {
+            progress_tasks(
+                &p,
+                Some(RUN),
+                &TasksArgs {
+                    tasks: list.iter().map(|t| t.to_string()).collect(),
+                    node: Some("gather".into()),
+                    env_node: None,
+                },
+                now(),
+            )
+        };
+        let task = |t: &str, status: Option<StepStatus>| {
+            progress_task(
+                &p,
+                Some(RUN),
+                &TaskArgs {
+                    task: t.into(),
+                    status,
+                    text: None,
+                    node: None,
+                    env_node: Some("gather".into()),
+                },
+                now(),
+            )
+        };
+        let statuses = |r: ProgressResult| -> Vec<(String, StepStatus)> {
+            r.node
+                .unwrap()
+                .tasks
+                .iter()
+                .map(|t| (t.title.clone(), t.status))
+                .collect()
+        };
+
+        assert_eq!(
+            tasks(&["List open PRs", "Read each diff", "Sort by risk"])
+                .unwrap()
+                .node
+                .unwrap()
+                .tasks
+                .len(),
+            3
+        );
+        assert!(
+            !tasks(&["List open PRs", "Read each diff", "Sort by risk"])
+                .unwrap()
+                .changed
+        );
+        task("1", Some(Done)).unwrap();
+        // By title, case aside; started by default.
+        task("read each DIFF", None).unwrap();
+        assert!(!task("2", None).unwrap().changed);
+
+        // Planning again keeps how far each task with the same title got.
+        let r = tasks(&[
+            "List open PRs",
+            "Read each diff",
+            "Check CI",
+            "Sort by risk",
+        ])
+        .unwrap();
+        assert_eq!(
+            statuses(r),
+            [
+                ("List open PRs".to_string(), Done),
+                ("Read each diff".to_string(), Active),
+                ("Check CI".to_string(), Pending),
+                ("Sort by risk".to_string(), Pending),
+            ]
+        );
+
+        let e = task("9", None).unwrap_err();
+        assert_eq!(e.code, ProgressCode::UnknownTask);
+        assert_eq!(e.suggestions.len(), 4);
+        assert_eq!(e.suggestions[2], "3 Check CI");
+        assert_eq!(tasks(&["a", "a"]).unwrap_err().code, ProgressCode::Usage);
+        assert_eq!(tasks(&[" ", ""]).unwrap_err().code, ProgressCode::Usage);
+
+        // Moving on finishes the task still going; one never started stays as it was.
+        next(&p, "a", Some("gather"), None).unwrap();
+        let snap = read_progress(&p, RUN).unwrap();
+        let got: Vec<StepStatus> = snap
+            .node("gather")
+            .unwrap()
+            .tasks
+            .iter()
+            .map(|t| t.status)
+            .collect();
+        assert_eq!(got, [Done, Done, Pending, Pending]);
+        let kinds: Vec<&str> = snap
+            .history
+            .iter()
+            .filter_map(|e| match e {
+                HistoryEntry::Tasks { .. } => Some("tasks"),
+                HistoryEntry::Task { .. } => Some("task"),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(kinds, ["tasks", "task", "task", "tasks"]);
+        // The record keeps them.
+        let rec = progress_of(&snap);
+        assert_eq!(
+            rec.steps
+                .iter()
+                .find(|s| s.id == "gather")
+                .unwrap()
+                .tasks
+                .len(),
+            4
+        );
     }
 
     #[test]
