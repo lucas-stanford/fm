@@ -123,11 +123,17 @@ impl AgentCli for Pi {
                 let Some(msg) = v.get("message").filter(|m| is_assistant(Some(m))) else {
                     return out;
                 };
-                if str_at(msg, "stopReason") == Some("error") {
-                    let e = str_at(msg, "errorMessage").unwrap_or("the model call failed");
-                    let e = one_line(e, ERROR_MAX);
-                    state.error = Some(e.clone());
-                    out.push(LiveEvent::Error { message: e, ts });
+                match str_at(msg, "stopReason") {
+                    Some("error") => {
+                        let e = str_at(msg, "errorMessage").unwrap_or("the model call failed");
+                        let e = one_line(e, ERROR_MAX);
+                        state.error = Some(e.clone());
+                        out.push(LiveEvent::Error { message: e, ts });
+                    }
+                    // pi retries a transient error (a 408, a 5xx, a dropped connection) by itself and
+                    // goes on: a later answer means the earlier error did not end the turn.
+                    Some("aborted") => {}
+                    _ => state.error = None,
                 }
                 let text = blocks_text(msg.get("content"), "text", "text");
                 if !text.trim().is_empty() {

@@ -42,6 +42,9 @@ First public release.
   so the step before ends `done` and the move is in the run's history.
 - `fm validate <AUTOMATION.md|folder>` checks one file as the specification says, without a state
   folder or discovery: `<name>: valid`, or the first refusal.
+- A pi step that hits a transient error pi retries by itself (an HTTP 408 `user_request_timeout`,
+  a 5xx, a dropped connection) and then answers is `done` with that answer. fm used to keep the
+  first error and fail the step, throwing the answer away.
 
 - `fm render` draws a Mermaid flowchart with a status on each node, as plain
   text (no escape codes) or as a standalone, sanitised SVG.

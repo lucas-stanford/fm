@@ -232,6 +232,25 @@ fn pi_tool_and_resume() {
 }
 
 #[test]
+fn pi_retried_error_does_not_fail_the_turn() {
+    // Two 408s that pi retried by itself, then the answer: the turn succeeded.
+    let (events, r) = run_fixture(CliId::Pi, "retried.jsonl", 0, "");
+    assert_eq!(errors(&events).len(), 2, "each failed try is still shown");
+    assert_eq!(finals(&events), ["pong"]);
+    assert_eq!(r.answer.as_deref(), Some("pong"));
+    assert_eq!(r.error, None);
+}
+
+#[test]
+fn pi_error_after_its_retries_fails_the_turn() {
+    // pi retried the 408 and gave up: the turn failed with the last error.
+    let (events, r) = run_fixture(CliId::Pi, "gave-up.jsonl", 0, "");
+    assert_eq!(errors(&events).len(), 3);
+    let e = r.error.expect("the turn failed");
+    assert!(e.contains("user_request_timeout"), "{e}");
+}
+
+#[test]
 fn pi_bad_model_reports_stderr() {
     let stderr = fixture("pi", "bad-model.stderr");
     let r = adapter(CliId::Pi).finish(&StreamState::default(), Some(1), &stderr);
